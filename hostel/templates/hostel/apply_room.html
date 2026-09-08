@@ -1,0 +1,48 @@
+{% extends 'hostel/base.html' %}
+
+{% block title %}Confirm Room Application - HostelEase{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card p-4 p-md-5 bg-white shadow-sm text-center">
+            <i class="bi bi-door-open-fill text-primary display-4 mb-3"></i>
+            <h3 class="fw-bold">Confirm Room Application</h3>
+            <p class="text-muted">You are applying for allocation in:</p>
+
+            <div class="card bg-light p-4 text-start mb-4">
+                <div class="d-flex justify-content-between mb-2">
+                    <span class="text-muted">Hostel Block:</span>
+                    <strong>{{ room.block.name }} ({{ room.block.block_type }})</strong>
+                </div>
+                <div class="d-flex justify-content-between mb-2">
+                    <span class="text-muted">Room Number:</span>
+                    <strong class="text-primary fs-5">Room {{ room.room_number }} (Floor {{ room.floor }})</strong>
+                </div>
+                <div class="d-flex justify-content-between mb-2">
+                    <span class="text-muted">Room Configuration:</span>
+                    <strong>{{ room.get_room_type_display }}</strong>
+                </div>
+                <div class="d-flex justify-content-between mb-2">
+                    <span class="text-muted">Available Vacancy:</span>
+                    <span class="badge bg-success">{{ room.available_beds }} Beds Available</span>
+                </div>
+                <div class="d-flex justify-content-between pt-2 border-top">
+                    <span class="text-muted">Semester Rent:</span>
+                    <strong class="text-dark">Rs. {{ room.rent_per_semester }}</strong>
+                </div>
+            </div>
+
+            <form method="POST">
+                {% csrf_token %}
+                <div class="d-flex gap-3 justify-content-center">
+                    <a href="{% url 'room_list' %}" class="btn btn-outline-secondary px-4">Cancel</a>
+                    <button type="submit" class="btn btn-primary px-4 fw-semibold">
+                        <i class="bi bi-send-check me-1"></i> Confirm &amp; Submit Application
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,77 @@
+{% extends 'hostel/base.html' %}
+
+{% block title %}My Room Details - HostelEase{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        {% if allotment %}
+            <div class="card p-4 p-md-5 bg-white shadow-sm mb-4">
+                <div class="d-flex justify-content-between align-items-center border-bottom pb-3 mb-4">
+                    <div>
+                        <span class="badge bg-success-subtle text-success fw-semibold px-3 py-1 mb-2">Active Allotment</span>
+                        <h2 class="fw-bold mb-0">Room {{ allotment.room.room_number }}</h2>
+                        <small class="text-muted">{{ allotment.room.block.name }} &bull; Floor {{ allotment.room.floor }}</small>
+                    </div>
+                    <div class="text-end">
+                        <span class="badge bg-primary fs-6">{{ allotment.room.get_room_type_display }}</span>
+                        <small class="text-muted d-block mt-1">Allotted on: {{ allotment.allotment_date|date:"M d, Y" }}</small>
+                    </div>
+                </div>
+
+                <div class="row g-3 mb-4">
+                    <div class="col-md-4">
+                        <div class="p-3 bg-light rounded text-center">
+                            <span class="text-muted small">Semester Rent</span>
+                            <h5 class="fw-bold mt-1 text-primary">Rs. {{ allotment.room.rent_per_semester }}</h5>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="p-3 bg-light rounded text-center">
+                            <span class="text-muted small">Total Capacity</span>
+                            <h5 class="fw-bold mt-1">{{ allotment.room.capacity }} Students</h5>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="p-3 bg-light rounded text-center">
+                            <span class="text-muted small">Current Occupants</span>
+                            <h5 class="fw-bold mt-1">{{ allotment.room.occupied_beds }} Students</h5>
+                        </div>
+                    </div>
+                </div>
+
+                <h5 class="fw-bold mb-3"><i class="bi bi-people-fill text-primary me-2"></i>My Roommates</h5>
+                {% if roommates %}
+                    <ul class="list-group mb-4">
+                        {% for rm in roommates %}
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                <div>
+                                    <strong>{{ rm.student.get_full_name|default:rm.student.username }}</strong>
+                                    <small class="text-muted d-block">Roll No: {{ rm.student.profile.roll_number|default:"N/A" }} &bull; {{ rm.student.profile.department }}</small>
+                                </div>
+                                <span class="badge bg-secondary-subtle text-dark"><i class="bi bi-telephone me-1"></i>{{ rm.student.profile.phone_number|default:"N/A" }}</span>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <p class="text-muted bg-light p-3 rounded mb-4">No other roommates allotted to this room yet.</p>
+                {% endif %}
+
+                <div class="d-flex gap-2">
+                    <a href="{% url 'submit_complaint' %}" class="btn btn-warning"><i class="bi bi-tools me-1"></i> Report Room Issue</a>
+                    <a href="{% url 'student_fees' %}" class="btn btn-outline-primary"><i class="bi bi-receipt me-1"></i> View Fee Dues</a>
+                </div>
+            </div>
+        {% else %}
+            <div class="card p-5 text-center bg-white shadow-sm">
+                <i class="bi bi-door-closed text-secondary display-3 mb-3"></i>
+                <h4 class="fw-bold">No Active Room Allotment</h4>
+                <p class="text-muted mb-4">You have not been assigned a hostel room yet. Explore available vacancies to submit an allotment request.</p>
+                <div>
+                    <a href="{% url 'room_list' %}" class="btn btn-primary px-4"><i class="bi bi-door-open me-2"></i>Browse &amp; Apply for Rooms</a>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

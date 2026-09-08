@@ -1,0 +1,117 @@
+{% extends 'hostel/base.html' %}
+
+{% block title %}Student Portal - HostelEase{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+    <div>
+        <h2 class="fw-bold mb-1">Welcome, {{ user.first_name|default:user.username }}!</h2>
+        <span class="text-muted">Student ID: <strong>{{ user.profile.roll_number|default:"Not Assigned" }}</strong> &bull; {{ user.profile.department|default:"Department" }}</span>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{% url 'room_list' %}" class="btn btn-primary"><i class="bi bi-door-open me-1"></i> Browse Rooms</a>
+        <a href="{% url 'submit_complaint' %}" class="btn btn-warning"><i class="bi bi-tools me-1"></i> Lodge Complaint</a>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <!-- Room Status Card -->
+    <div class="col-md-4">
+        <div class="card p-4 h-100 stat-card border-primary">
+            <h6 class="text-muted text-uppercase fw-semibold mb-2">Room Allotment</h6>
+            {% if allotment %}
+                <h4 class="fw-bold text-dark mb-1">Room {{ allotment.room.room_number }}</h4>
+                <p class="text-muted mb-2">{{ allotment.room.block.name }} &bull; Floor {{ allotment.room.floor }}</p>
+                <span class="badge bg-success-subtle text-success w-fit">Allotted</span>
+                <div class="mt-3">
+                    <a href="{% url 'my_room' %}" class="btn btn-sm btn-outline-primary">View Roommates &amp; Info</a>
+                </div>
+            {% elif pending_app %}
+                <h4 class="fw-bold text-warning mb-1">Application Pending</h4>
+                <p class="text-muted mb-2">Requested: Room {{ pending_app.room.room_number }} ({{ pending_app.room.block.name }})</p>
+                <span class="badge bg-warning-subtle text-warning">Awaiting Warden Approval</span>
+            {% else %}
+                <h4 class="fw-bold text-secondary mb-1">No Room Allotted</h4>
+                <p class="text-muted mb-3">You have not applied for a hostel room yet.</p>
+                <a href="{% url 'room_list' %}" class="btn btn-sm btn-primary">Apply for a Room</a>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Fee Due Card -->
+    <div class="col-md-4">
+        <div class="card p-4 h-100 stat-card border-danger">
+            <h6 class="text-muted text-uppercase fw-semibold mb-2">Outstanding Dues</h6>
+            <h3 class="fw-bold text-danger mb-1">Rs. {{ pending_fee }}</h3>
+            <p class="text-muted mb-3">Pending hostel &amp; mess payments</p>
+            <div>
+                <a href="{% url 'student_fees' %}" class="btn btn-sm btn-outline-danger">Fee Ledger &amp; Pay &rarr;</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Maintenance Summary Card -->
+    <div class="col-md-4">
+        <div class="card p-4 h-100 stat-card border-warning">
+            <h6 class="text-muted text-uppercase fw-semibold mb-2">Maintenance Grievances</h6>
+            <h4 class="fw-bold text-dark mb-1">{{ recent_complaints.count }} Tickets</h4>
+            <p class="text-muted mb-3">Track filed maintenance requests</p>
+            <div>
+                <a href="{% url 'complaint_list' %}" class="btn btn-sm btn-outline-warning">View All Tickets &rarr;</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Maintenance Updates Table -->
+<div class="card p-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="fw-bold mb-0"><i class="bi bi-clock-history me-2"></i>Recent Maintenance Requests</h5>
+        <a href="{% url 'submit_complaint' %}" class="btn btn-sm btn-primary">+ New Request</a>
+    </div>
+    {% if recent_complaints %}
+        <div class="table-responsive">
+            <table class="table align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>Ticket ID</th>
+                        <th>Category</th>
+                        <th>Title</th>
+                        <th>Filed On</th>
+                        <th>Status</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for c in recent_complaints %}
+                        <tr>
+                            <td><strong>#{{ c.id }}</strong></td>
+                            <td><span class="badge bg-secondary-subtle text-dark">{{ c.category }}</span></td>
+                            <td>{{ c.title }}</td>
+                            <td>{{ c.created_at|date:"M d, Y" }}</td>
+                            <td>
+                                {% if c.status == 'Resolved' %}
+                                    <span class="badge bg-success">Resolved</span>
+                                {% elif c.status == 'In-Progress' %}
+                                    <span class="badge bg-warning text-dark">In-Progress</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">Pending</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if c.status == 'Resolved' and not c.rating %}
+                                    <a href="{% url 'complaint_feedback' c.id %}" class="btn btn-sm btn-outline-success">Rate Service</a>
+                                {% else %}
+                                    <span class="text-muted small">{{ c.warden_remarks|default:"In Review"|truncatechars:25 }}</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <p class="text-muted mb-0">No maintenance complaints registered.</p>
+    {% endif %}
+</div>
+{% endblock %}

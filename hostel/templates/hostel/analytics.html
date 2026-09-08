@@ -1,0 +1,182 @@
+{% extends 'hostel/base.html' %}
+
+{% block title %}Campus Hostel Analytics & Reports - HostelEase{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+    <div>
+        <h2 class="fw-bold mb-1"><i class="bi bi-graph-up-arrow text-primary me-2"></i>Campus Hostel Analytics</h2>
+        <p class="text-muted mb-0">Real-time data visualization of room occupancy, fee dues, and maintenance tickets.</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{% url 'export_students_csv' %}" class="btn btn-outline-primary btn-sm">
+            <i class="bi bi-download me-1"></i> Students CSV
+        </a>
+        <a href="{% url 'export_complaints_csv' %}" class="btn btn-outline-success btn-sm">
+            <i class="bi bi-download me-1"></i> Complaints CSV
+        </a>
+    </div>
+</div>
+
+<!-- Charts Grid -->
+<div class="row g-4 mb-4">
+    <!-- Chart 1: Hostel Occupancy by Block -->
+    <div class="col-lg-7">
+        <div class="card p-4 h-100 bg-white shadow-sm">
+            <h5 class="fw-bold mb-3"><i class="bi bi-building me-2 text-primary"></i>Bed Capacity vs Occupied Beds (by Block)</h5>
+            <div>
+                <canvas id="occupancyChart" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chart 2: Fee Collection Overview -->
+    <div class="col-lg-5">
+        <div class="card p-4 h-100 bg-white shadow-sm">
+            <h5 class="fw-bold mb-3"><i class="bi bi-pie-chart-fill me-2 text-success"></i>Fee Collection Breakdown</h5>
+            <div class="d-flex justify-content-center">
+                <div style="width: 260px; height: 260px;">
+                    <canvas id="feeChart"></canvas>
+                </div>
+            </div>
+            <div class="row text-center mt-3 pt-2 border-top">
+                <div class="col-6">
+                    <small class="text-muted">Collected</small>
+                    <h6 class="fw-bold text-success mb-0">Rs. {{ paid_sum }}</h6>
+                </div>
+                <div class="col-6">
+                    <small class="text-muted">Pending</small>
+                    <h6 class="fw-bold text-danger mb-0">Rs. {{ pending_sum }}</h6>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chart 3: Maintenance Complaints by Category -->
+    <div class="col-lg-6">
+        <div class="card p-4 h-100 bg-white shadow-sm">
+            <h5 class="fw-bold mb-3"><i class="bi bi-tools me-2 text-warning"></i>Maintenance Issues by Category</h5>
+            <div>
+                <canvas id="categoryChart" height="180"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chart 4: Complaint Resolution Status -->
+    <div class="col-lg-6">
+        <div class="card p-4 h-100 bg-white shadow-sm">
+            <h5 class="fw-bold mb-3"><i class="bi bi-check2-circle me-2 text-info"></i>Ticket Resolution Lifecycle</h5>
+            <div class="d-flex justify-content-center">
+                <div style="width: 250px; height: 250px;">
+                    <canvas id="statusChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{{ block_labels|json_script:"block-labels-data" }}
+{{ block_occupied|json_script:"block-occupied-data" }}
+{{ block_capacity|json_script:"block-capacity-data" }}
+
+{{ category_labels|json_script:"category-labels-data" }}
+{{ category_counts|json_script:"category-counts-data" }}
+
+{{ status_labels|json_script:"status-labels-data" }}
+{{ status_counts|json_script:"status-counts-data" }}
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    // 1. Block Occupancy Chart
+    const blockLabels = JSON.parse(document.getElementById('block-labels-data').textContent);
+    const blockOccupied = JSON.parse(document.getElementById('block-occupied-data').textContent);
+    const blockCapacity = JSON.parse(document.getElementById('block-capacity-data').textContent);
+
+    new Chart(document.getElementById('occupancyChart'), {
+        type: 'bar',
+        data: {
+            labels: blockLabels.length ? blockLabels : ['No Blocks Configured'],
+            datasets: [
+                {
+                    label: 'Occupied Beds',
+                    data: blockOccupied.length ? blockOccupied : [0],
+                    backgroundColor: '#3b82f6'
+                },
+                {
+                    label: 'Total Bed Capacity',
+                    data: blockCapacity.length ? blockCapacity : [0],
+                    backgroundColor: '#cbd5e1'
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: { beginAtZero: true, ticks: { precision: 0 } }
+            }
+        }
+    });
+
+    // 2. Fee Collection Donut
+    const paidSum = {{ paid_sum }};
+    const pendingSum = {{ pending_sum }};
+    new Chart(document.getElementById('feeChart'), {
+        type: 'doughnut',
+        data: {
+            labels: ['Fee Collected', 'Fee Pending'],
+            datasets: [{
+                data: (paidSum === 0 && pendingSum === 0) ? [1, 0] : [paidSum, pendingSum],
+                backgroundColor: ['#10b981', '#ef4444']
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false
+        }
+    });
+
+    // 3. Complaint Categories Bar Chart
+    const catLabels = JSON.parse(document.getElementById('category-labels-data').textContent);
+    const catCounts = JSON.parse(document.getElementById('category-counts-data').textContent);
+
+    new Chart(document.getElementById('categoryChart'), {
+        type: 'bar',
+        data: {
+            labels: catLabels.length ? catLabels : ['None'],
+            datasets: [{
+                label: 'Reported Issues',
+                data: catCounts.length ? catCounts : [0],
+                backgroundColor: '#f59e0b'
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: { beginAtZero: true, ticks: { precision: 0 } }
+            }
+        }
+    });
+
+    // 4. Ticket Status Doughnut
+    const statLabels = JSON.parse(document.getElementById('status-labels-data').textContent);
+    const statCounts = JSON.parse(document.getElementById('status-counts-data').textContent);
+
+    new Chart(document.getElementById('statusChart'), {
+        type: 'pie',
+        data: {
+            labels: statLabels.length ? statLabels : ['No Complaints'],
+            datasets: [{
+                data: statCounts.length ? statCounts : [1],
+                backgroundColor: ['#64748b', '#eab308', '#22c55e']
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false
+        }
+    });
+});
+</script>
+{% endblock %}

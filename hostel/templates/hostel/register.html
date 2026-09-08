@@ -1,0 +1,84 @@
+{% extends 'hostel/base.html' %}
+
+{% block title %}Student Registration - HostelEase{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card shadow-sm p-4 p-md-5 bg-white">
+            <div class="text-center mb-4">
+                <i class="bi bi-person-badge-fill text-primary display-4"></i>
+                <h3 class="fw-bold mt-2">Student Registration</h3>
+                <p class="text-muted">Register your student account to apply for hostel rooms and manage fees.</p>
+            </div>
+
+            <form method="POST" novalidate>
+                {% csrf_token %}
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Username *</label>
+                        {{ form.username }}
+                        {% if form.username.errors %}<div class="text-danger small">{{ form.username.errors }}</div>{% endif %}
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Email Address *</label>
+                        {{ form.email }}
+                        {% if form.email.errors %}<div class="text-danger small">{{ form.email.errors }}</div>{% endif %}
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Password *</label>
+                        {{ form.password }}
+                        {% if form.password.errors %}<div class="text-danger small">{{ form.password.errors }}</div>{% endif %}
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Roll / Registration Number *</label>
+                        {{ form.roll_number }}
+                        {% if form.roll_number.errors %}<div class="text-danger small">{{ form.roll_number.errors }}</div>{% endif %}
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">First Name *</label>
+                        {{ form.first_name }}
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Last Name *</label>
+                        {{ form.last_name }}
+                    </div>
+
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold">Gender *</label>
+                        {{ form.gender }}
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold">Department *</label>
+                        {{ form.department }}
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold">Student Phone *</label>
+                        {{ form.phone_number }}
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Guardian Name *</label>
+                        {{ form.guardian_name }}
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Guardian Phone Number *</label>
+                        {{ form.guardian_phone }}
+                    </div>
+                </div>
+
+                <div class="d-grid mt-4">
+                    <button type="submit" class="btn btn-primary btn-lg fw-semibold">
+                        <i class="bi bi-check-circle me-2"></i>Complete Registration
+                    </button>
+                </div>
+            </form>
+
+            <div class="text-center mt-4">
+                <small class="text-muted">Already registered? <a href="{% url 'login' %}" class="fw-semibold">Login here</a></small>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

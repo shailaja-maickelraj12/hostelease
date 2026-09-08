@@ -1,0 +1,100 @@
+{% extends 'hostel/base.html' %}
+
+{% block title %}Fee Records & Tracking - HostelEase{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+    <div>
+        <h2 class="fw-bold mb-1"><i class="bi bi-cash-stack text-success me-2"></i>Campus Hostel Fee Ledger</h2>
+        <p class="text-muted mb-0">Track student payments, verify transaction IDs, and identify fee defaulters.</p>
+    </div>
+</div>
+
+<!-- Dues and Collections -->
+<div class="row g-4 mb-4">
+    <div class="col-md-6">
+        <div class="card p-4 stat-card border-success bg-white">
+            <span class="text-muted small fw-semibold text-uppercase">Total Collections</span>
+            <h3 class="fw-bold text-success mt-1">Rs. {{ total_collected }}</h3>
+            <p class="text-muted small mb-0">Verified successful transactions across all blocks.</p>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card p-4 stat-card border-danger bg-white">
+            <span class="text-muted small fw-semibold text-uppercase">Unpaid / Defaulter Dues</span>
+            <h3 class="fw-bold text-danger mt-1">Rs. {{ total_pending }}</h3>
+            <p class="text-muted small mb-0">Pending balance requiring follow-up or overdue notices.</p>
+        </div>
+    </div>
+</div>
+
+<!-- Filter bar -->
+<div class="card p-3 mb-4 bg-white">
+    <div class="d-flex gap-2 align-items-center flex-wrap">
+        <span class="fw-semibold text-muted me-2">Filter by Status:</span>
+        <a href="{% url 'warden_fee_tracker' %}" class="btn btn-sm {% if not status_filter %}btn-primary{% else %}btn-outline-secondary{% endif %}">All Records</a>
+        <a href="{% url 'warden_fee_tracker' %}?status=Paid" class="btn btn-sm {% if status_filter == 'Paid' %}btn-success{% else %}btn-outline-success{% endif %}">Paid Only</a>
+        <a href="{% url 'warden_fee_tracker' %}?status=Pending" class="btn btn-sm {% if status_filter == 'Pending' %}btn-danger{% else %}btn-outline-danger{% endif %}">Pending / Defaulters</a>
+    </div>
+</div>
+
+<div class="card shadow-sm p-4 bg-white">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th>Student Name</th>
+                    <th>Roll Number</th>
+                    <th>Fee Type</th>
+                    <th>Amount</th>
+                    <th>Due Date</th>
+                    <th>Status</th>
+                    <th>Transaction ID</th>
+                    <th class="text-end">Receipt</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in payments %}
+                    <tr>
+                        <td>
+                            <strong>{{ p.student.get_full_name|default:p.student.username }}</strong>
+                            <small class="text-muted d-block">{{ p.student.email }}</small>
+                        </td>
+                        <td>{{ p.student.profile.roll_number|default:"N/A" }}</td>
+                        <td>{{ p.fee_type }}</td>
+                        <td><strong>Rs. {{ p.amount }}</strong></td>
+                        <td>{{ p.due_date|date:"M d, Y" }}</td>
+                        <td>
+                            {% if p.status == 'Paid' %}
+                                <span class="badge bg-success">Paid</span>
+                            {% else %}
+                                <span class="badge bg-danger">Pending</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if p.transaction_id %}
+                                <code class="small">{{ p.transaction_id }}</code>
+                            {% else %}
+                                <span class="text-muted small">N/A</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-end">
+                            {% if p.status == 'Paid' %}
+                                <a href="{% url 'fee_receipt' p.id %}" class="btn btn-sm btn-outline-primary">
+                                    <i class="bi bi-eye"></i> Receipt
+                                </a>
+                            {% else %}
+                                <span class="text-muted small">Awaiting Payment</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="8" class="text-center text-muted py-4">No fee transactions found.</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
