@@ -1,127 +1,90 @@
 {% extends 'hostel/base.html' %}
 
-{% block title %}Warden & Admin Dashboard - HostelEase{% endblock %}
+{% block title %}Warden Room Management Dashboard - HostelEase{% endblock %}
 
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
     <div>
-        <h2 class="fw-bold mb-1">Hostel Administration Portal</h2>
-        <span class="text-muted">Welcome, Warden <strong>{{ user.username }}</strong> &bull; Campus Housing Operations</span>
+        <h2 class="fw-bold mb-1">Hostel Allotment &amp; Vacancy Portal</h2>
+        <span class="text-muted">Hostel Warden: <strong>{{ user.username }}</strong> &bull; Campus Housing Administration</span>
     </div>
     <div class="d-flex gap-2">
-        <a href="{% url 'analytics_dashboard' %}" class="btn btn-primary"><i class="bi bi-graph-up me-1"></i> View Analytics</a>
-        <a href="{% url 'export_students_csv' %}" class="btn btn-outline-secondary"><i class="bi bi-file-earmark-spreadsheet me-1"></i> Export Students CSV</a>
+        <a href="{% url 'room_list' %}" class="btn btn-primary"><i class="bi bi-door-open me-1"></i> Room Inventory</a>
+        <a href="{% url 'export_allotments_csv' %}" class="btn btn-outline-success"><i class="bi bi-download me-1"></i> Export Allotments (CSV)</a>
     </div>
 </div>
 
 <!-- Key Performance Metrics Row -->
 <div class="row g-4 mb-4">
-    <div class="col-md-3">
-        <div class="card p-3 h-100 stat-card border-primary">
+    <div class="col-md-4">
+        <div class="card p-3 h-100 stat-card border-primary bg-white">
             <span class="text-muted small fw-semibold text-uppercase">Bed Occupancy</span>
             <h3 class="fw-bold text-dark mt-1">{{ total_occupied }} / {{ total_capacity }}</h3>
             <div class="progress mt-2" style="height: 6px;">
                 <div class="progress-bar bg-primary" role="progressbar" style="width: {{ occupancy_rate }}%;"></div>
             </div>
-            <small class="text-muted mt-2 d-block">{{ occupancy_rate }}% Occupied ({{ total_vacant }} Vacant Beds)</small>
+            <small class="text-muted mt-2 d-block">{{ occupancy_rate }}% Occupied &bull; {{ total_vacant }} Vacant Beds</small>
         </div>
     </div>
 
-    <div class="col-md-3">
-        <div class="card p-3 h-100 stat-card border-warning">
-            <span class="text-muted small fw-semibold text-uppercase">Pending Allotments</span>
+    <div class="col-md-4">
+        <div class="card p-3 h-100 stat-card border-warning bg-white">
+            <span class="text-muted small fw-semibold text-uppercase">Pending Applications</span>
             <h3 class="fw-bold text-warning mt-1">{{ pending_allotments }}</h3>
-            <p class="text-muted small mb-0">Student room applications waiting for approval</p>
-            <a href="{% url 'manage_allotments' %}" class="btn btn-sm btn-outline-warning mt-2">Process Allotments &rarr;</a>
+            <p class="text-muted small mb-0">Student room applications awaiting your approval</p>
+            <a href="{% url 'manage_allotments' %}" class="btn btn-sm btn-outline-warning mt-2">Review Allotments &rarr;</a>
         </div>
     </div>
 
-    <div class="col-md-3">
-        <div class="card p-3 h-100 stat-card border-danger">
-            <span class="text-muted small fw-semibold text-uppercase">Active Grievances</span>
-            <h3 class="fw-bold text-danger mt-1">{{ pending_complaints }}</h3>
-            <p class="text-muted small mb-0">Unresolved campus maintenance tickets</p>
-            <a href="{% url 'manage_complaints' %}" class="btn btn-sm btn-outline-danger mt-2">Manage Issues &rarr;</a>
-        </div>
-    </div>
-
-    <div class="col-md-3">
-        <div class="card p-3 h-100 stat-card border-success">
-            <span class="text-muted small fw-semibold text-uppercase">Fee Collections</span>
-            <h3 class="fw-bold text-success mt-1">Rs. {{ total_fee_collected }}</h3>
-            <small class="text-muted d-block">Pending Dues: Rs. {{ pending_fee_total }}</small>
-            <a href="{% url 'warden_fee_tracker' %}" class="btn btn-sm btn-outline-success mt-2">Inspect Ledger &rarr;</a>
+    <div class="col-md-4">
+        <div class="card p-3 h-100 stat-card border-success bg-white">
+            <span class="text-muted small fw-semibold text-uppercase">Total Configured Rooms</span>
+            <h3 class="fw-bold text-success mt-1">{{ total_rooms }} Rooms</h3>
+            <p class="text-muted small mb-0">Across Boys and Girls campus hostel blocks</p>
+            <a href="{% url 'room_list' %}" class="btn btn-sm btn-outline-success mt-2">Inspect Vacancies &rarr;</a>
         </div>
     </div>
 </div>
 
-<!-- Quick Action Shortcuts -->
-<div class="row g-3 mb-4">
-    <div class="col-md-4">
-        <div class="card p-3 text-center bg-white">
-            <i class="bi bi-door-open fs-2 text-primary"></i>
-            <h6 class="fw-bold mt-2">Room Inventory & Vacancy</h6>
-            <p class="text-muted small">Monitor blocks, bed capacity and availability.</p>
-            <a href="{% url 'room_list' %}" class="btn btn-sm btn-primary">Manage Rooms</a>
-        </div>
-    </div>
-    <div class="col-md-4">
-        <div class="card p-3 text-center bg-white">
-            <i class="bi bi-cash-stack fs-2 text-success"></i>
-            <h6 class="fw-bold mt-2">Payment Verification</h6>
-            <p class="text-muted small">Review transactions and pending fee defaulters.</p>
-            <a href="{% url 'warden_fee_tracker' %}" class="btn btn-sm btn-success">Fee Tracker</a>
-        </div>
-    </div>
-    <div class="col-md-4">
-        <div class="card p-3 text-center bg-white">
-            <i class="bi bi-pie-chart-fill fs-2 text-info"></i>
-            <h6 class="fw-bold mt-2">Chart.js Analytics</h6>
-            <p class="text-muted small">View visual trends for rooms, issues, and revenue.</p>
-            <a href="{% url 'analytics_dashboard' %}" class="btn btn-sm btn-info text-white">Open Analytics</a>
-        </div>
-    </div>
-</div>
-
-<!-- Recent Maintenance Complaints -->
-<div class="card p-4">
+<!-- Recent Applications Table -->
+<div class="card p-4 bg-white shadow-sm">
     <div class="d-flex justify-content-between align-items-center mb-3">
-        <h5 class="fw-bold mb-0"><i class="bi bi-tools me-2 text-primary"></i>Recent Maintenance Tickets</h5>
-        <a href="{% url 'manage_complaints' %}" class="btn btn-sm btn-outline-primary">View All Complaints</a>
+        <h5 class="fw-bold mb-0"><i class="bi bi-card-checklist me-2 text-primary"></i>Recent Room Applications</h5>
+        <a href="{% url 'manage_allotments' %}" class="btn btn-sm btn-outline-primary">View All Applications</a>
     </div>
-    {% if recent_complaints %}
+    {% if recent_allotments %}
         <div class="table-responsive">
-            <table class="table align-middle">
+            <table class="table table-hover align-middle">
                 <thead class="table-light">
                     <tr>
-                        <th>Ticket ID</th>
-                        <th>Student</th>
-                        <th>Room</th>
-                        <th>Category</th>
+                        <th>Student Name</th>
+                        <th>Roll Number</th>
+                        <th>Requested Room</th>
+                        <th>Applied On</th>
                         <th>Status</th>
-                        <th>Filed On</th>
-                        <th>Action</th>
+                        <th class="text-end">Action</th>
                     </tr>
                 </thead>
                 <tbody>
-                    {% for c in recent_complaints %}
+                    {% for a in recent_allotments %}
                         <tr>
-                            <td><strong>#{{ c.id }}</strong></td>
-                            <td>{{ c.student.username }}</td>
-                            <td>{{ c.room.room_number|default:"N/A" }}</td>
-                            <td><span class="badge bg-secondary-subtle text-dark">{{ c.category }}</span></td>
+                            <td><strong>{{ a.student.get_full_name|default:a.student.username }}</strong></td>
+                            <td>{{ a.student.profile.roll_number|default:"N/A" }}</td>
+                            <td>Room {{ a.room.room_number }} ({{ a.room.block.name }})</td>
+                            <td>{{ a.applied_date|date:"M d, Y" }}</td>
                             <td>
-                                {% if c.status == 'Resolved' %}
-                                    <span class="badge bg-success">Resolved</span>
-                                {% elif c.status == 'In-Progress' %}
-                                    <span class="badge bg-warning text-dark">In-Progress</span>
+                                {% if a.status == 'Approved' %}
+                                    <span class="badge bg-success">Approved</span>
+                                {% elif a.status == 'Pending' %}
+                                    <span class="badge bg-warning text-dark">Pending</span>
+                                {% elif a.status == 'Rejected' %}
+                                    <span class="badge bg-danger">Rejected</span>
                                 {% else %}
-                                    <span class="badge bg-danger">Pending</span>
+                                    <span class="badge bg-secondary">Vacated</span>
                                 {% endif %}
                             </td>
-                            <td>{{ c.created_at|date:"M d, Y" }}</td>
-                            <td>
-                                <a href="{% url 'update_complaint' c.id %}" class="btn btn-sm btn-outline-primary">Update Status</a>
+                            <td class="text-end">
+                                <a href="{% url 'manage_allotments' %}" class="btn btn-sm btn-outline-primary">Manage</a>
                             </td>
                         </tr>
                     {% endfor %}
@@ -129,7 +92,7 @@
             </table>
         </div>
     {% else %}
-        <p class="text-muted mb-0">No open complaints at this time.</p>
+        <p class="text-muted mb-0">No room applications received yet.</p>
     {% endif %}
 </div>
 {% endblock %}

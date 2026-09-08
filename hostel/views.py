@@ -1,33 +1,27 @@
 import csv
-import uuid
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import login, authenticate, logout
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from django.http import HttpResponse, JsonResponse
+from django.http import HttpResponse
 from django.utils import timezone
-from django.db.models import Sum, Count, Q
+from django.db.models import Sum
 
-from .models import (
-    UserProfile, HostelBlock, Room, RoomAllotment,
-    FeePayment, Complaint
-)
-from .forms import (
-    StudentRegistrationForm, RoomApplicationForm,
-    ComplaintForm, ComplaintStatusUpdateForm,
-    ComplaintFeedbackForm, PaymentCheckoutForm
-)
+from .models import UserProfile, HostelBlock, Room, RoomAllotment
+from .forms import StudentRegistrationForm, RoomApplicationForm
 
+# ==========================================
+# AUTHENTICATION & ROLE-BASED ACCESS
+# ==========================================
 
-# Helper Decorators
 def student_required(view_func):
     def wrapper(request, *args, **kwargs):
         if not request.user.is_authenticated:
             return redirect('login')
         if hasattr(request.user, 'profile') and request.user.profile.role == 'student':
             return view_func(request, *args, **kwargs)
-        messages.error(request, "Access denied. Student portal only.")
+        messages.error(request, "Access restricted to students.")
         return redirect('dashboard')
     return wrapper
 
@@ -105,16 +99,10 @@ def dashboard(request):
 def student_dashboard(request):
     allotment = RoomAllotment.objects.filter(student=request.user, status='Approved').first()
     pending_app = RoomAllotment.objects.filter(student=request.user, status='Pending').first()
-    payments = FeePayment.objects.filter(student=request.user).order_by('-due_date')
-    pending_fee = FeePayment.objects.filter(student=request.user, status='Pending').aggregate(total=Sum('amount'))['total'] or 0
-    recent_complaints = Complaint.objects.filter(student=request.user).order_by('-created_at')[:5]
 
     return render(request, 'hostel/student_dashboard.html', {
         'allotment': allotment,
         'pending_app': pending_app,
-        'payments': payments,
-        'pending_fee': pending_fee,
-        'recent_complaints': recent_complaints,
     })
 
 
@@ -127,11 +115,7 @@ def warden_dashboard(request):
     occupancy_rate = round((total_occupied / total_capacity * 100), 1) if total_capacity > 0 else 0
 
     pending_allotments = RoomAllotment.objects.filter(status='Pending').count()
-    pending_complaints = Complaint.objects.filter(status='Pending').count()
-    total_fee_collected = FeePayment.objects.filter(status='Paid').aggregate(total=Sum('amount'))['total'] or 0
-    pending_fee_total = FeePayment.objects.filter(status='Pending').aggregate(total=Sum('amount'))['total'] or 0
-
-    recent_complaints = Complaint.objects.all().order_by('-created_at')[:5]
+    recent_allotments = RoomAllotment.objects.all().order_by('-applied_date')[:5]
 
     return render(request, 'hostel/warden_dashboard.html', {
         'total_rooms': total_rooms,
@@ -140,10 +124,7 @@ def warden_dashboard(request):
         'total_vacant': total_vacant,
         'occupancy_rate': occupancy_rate,
         'pending_allotments': pending_allotments,
-        'pending_complaints': pending_complaints,
-        'total_fee_collected': total_fee_collected,
-        'pending_fee_total': pending_fee_total,
-        'recent_complaints': recent_complaints,
+        'recent_allotments': recent_allotments,
     })
 
 
@@ -175,15 +156,16 @@ def room_list(request):
 def apply_room(request, room_id):
     room = get_object_or_404(Room, id=room_id)
 
-    # Check if student already has an active allotment or pending application
+    # Check if student already has an active allotment
     existing_allotment = RoomAllotment.objects.filter(student=request.user, status='Approved').first()
     if existing_allotment:
-        messages.warning(request, f"You are already allotted Room {existing_allotment.room.room_number}.")
+        messages.warning(request, f"You already have an active room: Room {existing_allotment.room.room_number}.")
         return redirect('my_room')
 
+    # Check if student has a pending application
     pending_allotment = RoomAllotment.objects.filter(student=request.user, status='Pending').first()
     if pending_allotment:
-        messages.warning(request, "You already have a pending room application waiting for warden approval.")
+        messages.warning(request, "You already have a pending application awaiting warden review.")
         return redirect('student_dashboard')
 
     if room.is_full:
@@ -196,7 +178,7 @@ def apply_room(request, room_id):
             room=room,
             status='Pending'
         )
-        messages.success(request, f"Room application submitted for Room {room.room_number} ({room.block.name}). Awaiting warden approval.")
+        messages.success(request, f"Application submitted for Room {room.room_number} ({room.block.name}). Awaiting warden approval.")
         return redirect('student_dashboard')
 
     return render(request, 'hostel/apply_room.html', {'room': room})
@@ -207,7 +189,6 @@ def my_room(request):
     allotment = RoomAllotment.objects.filter(student=request.user, status='Approved').first()
     roommates = []
     if allotment:
-        # Find other students allotted to the same room
         roommates = RoomAllotment.objects.filter(room=allotment.room, status='Approved').exclude(student=request.user)
 
     return render(request, 'hostel/my_room.html', {
@@ -240,17 +221,7 @@ def update_allotment_status(request, allotment_id, new_status):
         room.occupied_beds += 1
         room.save()
 
-        # Auto-generate initial semester fee for student
-        FeePayment.objects.get_or_create(
-            student=allotment.student,
-            fee_type='Hostel Rent',
-            defaults={
-                'amount': room.rent_per_semester,
-                'due_date': timezone.now().date() + timezone.timedelta(days=15),
-                'status': 'Pending'
-            }
-        )
-        messages.success(request, f"Allotment approved for {allotment.student.username} in Room {room.room_number}.")
+        messages.success(request, f"Room {room.room_number} allotted to {allotment.student.username}.")
 
     elif new_status == 'Rejected':
         allotment.status = 'Rejected'
@@ -263,220 +234,20 @@ def update_allotment_status(request, allotment_id, new_status):
         if room.occupied_beds > 0:
             room.occupied_beds -= 1
             room.save()
-        messages.info(request, f"Room vacated for {allotment.student.username}.")
+        messages.info(request, f"Room vacated for {allotment.student.username}. Vacancy updated.")
 
     return redirect('manage_allotments')
 
 
-# ==========================================
-# MODULE 2: FEE PAYMENT INTEGRATION
-# ==========================================
-
-@student_required
-def student_fees(request):
-    payments = FeePayment.objects.filter(student=request.user).order_by('-due_date')
-    pending_total = payments.filter(status='Pending').aggregate(total=Sum('amount'))['total'] or 0
-    paid_total = payments.filter(status='Paid').aggregate(total=Sum('amount'))['total'] or 0
-
-    return render(request, 'hostel/student_fees.html', {
-        'payments': payments,
-        'pending_total': pending_total,
-        'paid_total': paid_total,
-    })
-
-
-@student_required
-def pay_fee(request, payment_id):
-    payment = get_object_or_404(FeePayment, id=payment_id, student=request.user)
-    if payment.status == 'Paid':
-        messages.info(request, "This fee has already been settled.")
-        return redirect('fee_receipt', payment_id=payment.id)
-
-    if request.method == 'POST':
-        form = PaymentCheckoutForm(request.POST)
-        if form.is_valid():
-            method = form.cleaned_data['payment_method']
-            # Simulate Payment Gateway success
-            payment.status = 'Paid'
-            payment.payment_method = method
-            payment.transaction_id = f"TXN-{uuid.uuid4().hex[:10].upper()}"
-            payment.paid_at = timezone.now()
-            payment.save()
-
-            messages.success(request, f"Payment of Rs.{payment.amount} successful! Transaction ID: {payment.transaction_id}")
-            return redirect('fee_receipt', payment_id=payment.id)
-    else:
-        form = PaymentCheckoutForm()
-
-    return render(request, 'hostel/pay_fee.html', {
-        'payment': payment,
-        'form': form,
-    })
-
-
-@login_required
-def fee_receipt(request, payment_id):
-    if request.user.is_staff or (hasattr(request.user, 'profile') and request.user.profile.role == 'warden'):
-        payment = get_object_or_404(FeePayment, id=payment_id)
-    else:
-        payment = get_object_or_404(FeePayment, id=payment_id, student=request.user)
-
-    allotment = RoomAllotment.objects.filter(student=payment.student, status='Approved').first()
-    return render(request, 'hostel/fee_receipt.html', {
-        'payment': payment,
-        'allotment': allotment,
-    })
-
-
 @warden_required
-def warden_fee_tracker(request):
-    status_filter = request.GET.get('status')
-    payments = FeePayment.objects.all().order_by('-due_date')
-    if status_filter:
-        payments = payments.filter(status=status_filter)
-
-    total_collected = FeePayment.objects.filter(status='Paid').aggregate(total=Sum('amount'))['total'] or 0
-    total_pending = FeePayment.objects.filter(status='Pending').aggregate(total=Sum('amount'))['total'] or 0
-
-    return render(request, 'hostel/warden_fees.html', {
-        'payments': payments,
-        'total_collected': total_collected,
-        'total_pending': total_pending,
-        'status_filter': status_filter,
-    })
-
-
-# ==========================================
-# MODULE 3: COMPLAINTS & ANALYTICS
-# ==========================================
-
-@student_required
-def complaint_list(request):
-    complaints = Complaint.objects.filter(student=request.user).order_by('-created_at')
-    return render(request, 'hostel/complaint_list.html', {'complaints': complaints})
-
-
-@student_required
-def submit_complaint(request):
-    allotment = RoomAllotment.objects.filter(student=request.user, status='Approved').first()
-    if request.method == 'POST':
-        form = ComplaintForm(request.POST, request.FILES)
-        if form.is_valid():
-            complaint = form.save(commit=False)
-            complaint.student = request.user
-            if allotment:
-                complaint.room = allotment.room
-            complaint.status = 'Pending'
-            complaint.save()
-            messages.success(request, "Maintenance ticket filed successfully! The warden team will review it.")
-            return redirect('complaint_list')
-    else:
-        form = ComplaintForm()
-
-    return render(request, 'hostel/submit_complaint.html', {'form': form, 'allotment': allotment})
-
-
-@student_required
-def complaint_feedback(request, complaint_id):
-    complaint = get_object_or_404(Complaint, id=complaint_id, student=request.user, status='Resolved')
-    if request.method == 'POST':
-        form = ComplaintFeedbackForm(request.POST, instance=complaint)
-        if form.is_valid():
-            form.save()
-            messages.success(request, "Thank you for your rating and feedback!")
-            return redirect('complaint_list')
-    else:
-        form = ComplaintFeedbackForm(instance=complaint)
-
-    return render(request, 'hostel/complaint_feedback.html', {'complaint': complaint, 'form': form})
-
-
-@warden_required
-def manage_complaints(request):
-    status_filter = request.GET.get('status')
-    category_filter = request.GET.get('category')
-
-    complaints = Complaint.objects.all().order_by('-created_at')
-    if status_filter:
-        complaints = complaints.filter(status=status_filter)
-    if category_filter:
-        complaints = complaints.filter(category=category_filter)
-
-    return render(request, 'hostel/manage_complaints.html', {
-        'complaints': complaints,
-        'status_filter': status_filter,
-        'category_filter': category_filter,
-    })
-
-
-@warden_required
-def update_complaint(request, complaint_id):
-    complaint = get_object_or_404(Complaint, id=complaint_id)
-    if request.method == 'POST':
-        form = ComplaintStatusUpdateForm(request.POST, instance=complaint)
-        if form.is_valid():
-            updated = form.save(commit=False)
-            if updated.status == 'Resolved' and not updated.resolved_at:
-                updated.resolved_at = timezone.now()
-            updated.save()
-            messages.success(request, f"Complaint #{complaint.id} status updated to {updated.status}.")
-            return redirect('manage_complaints')
-    else:
-        form = ComplaintStatusUpdateForm(instance=complaint)
-
-    return render(request, 'hostel/update_complaint.html', {'complaint': complaint, 'form': form})
-
-
-@warden_required
-def analytics_dashboard(request):
-    # 1. Occupancy by Block
-    blocks = HostelBlock.objects.all()
-    block_labels = []
-    block_occupied = []
-    block_capacity = []
-    for b in blocks:
-        block_labels.append(b.name)
-        cap = b.rooms.aggregate(total=Sum('capacity'))['total'] or 0
-        occ = b.rooms.aggregate(total=Sum('occupied_beds'))['total'] or 0
-        block_capacity.append(cap)
-        block_occupied.append(occ)
-
-    # 2. Complaint Categories
-    categories = Complaint.objects.values('category').annotate(count=Count('id'))
-    category_labels = [c['category'] for c in categories]
-    category_counts = [c['count'] for c in categories]
-
-    # 3. Complaint Statuses
-    statuses = Complaint.objects.values('status').annotate(count=Count('id'))
-    status_labels = [s['status'] for s in statuses]
-    status_counts = [s['count'] for s in statuses]
-
-    # 4. Fee Overview
-    paid_sum = FeePayment.objects.filter(status='Paid').aggregate(total=Sum('amount'))['total'] or 0
-    pending_sum = FeePayment.objects.filter(status='Pending').aggregate(total=Sum('amount'))['total'] or 0
-
-    return render(request, 'hostel/analytics.html', {
-        'block_labels': block_labels,
-        'block_occupied': block_occupied,
-        'block_capacity': block_capacity,
-        'category_labels': category_labels,
-        'category_counts': category_counts,
-        'status_labels': status_labels,
-        'status_counts': status_counts,
-        'paid_sum': float(paid_sum),
-        'pending_sum': float(pending_sum),
-    })
-
-
-@warden_required
-def export_students_csv(request):
+def export_allotments_csv(request):
     response = HttpResponse(content_type='text/csv')
-    response['Content-Disposition'] = 'attachment; filename="allotted_students.csv"'
+    response['Content-Disposition'] = 'attachment; filename="room_allotment_report.csv"'
 
     writer = csv.writer(response)
-    writer.writerow(['Roll Number', 'Student Name', 'Email', 'Block', 'Room Number', 'Allotment Date', 'Status'])
+    writer.writerow(['Roll Number', 'Student Name', 'Email', 'Block', 'Room Number', 'Room Type', 'Allotment Date', 'Status'])
 
-    allotments = RoomAllotment.objects.filter(status='Approved').select_related('student', 'student__profile', 'room', 'room__block')
+    allotments = RoomAllotment.objects.all().select_related('student', 'student__profile', 'room', 'room__block')
     for a in allotments:
         roll = a.student.profile.roll_number if hasattr(a.student, 'profile') else 'N/A'
         writer.writerow([
@@ -485,33 +256,8 @@ def export_students_csv(request):
             a.student.email,
             a.room.block.name,
             a.room.room_number,
+            a.room.get_room_type_display(),
             a.allotment_date.strftime('%Y-%m-%d') if a.allotment_date else 'N/A',
             a.status
-        ])
-    return response
-
-
-@warden_required
-def export_complaints_csv(request):
-    response = HttpResponse(content_type='text/csv')
-    response['Content-Disposition'] = 'attachment; filename="complaints_report.csv"'
-
-    writer = csv.writer(response)
-    writer.writerow(['Ticket ID', 'Student', 'Room', 'Category', 'Title', 'Status', 'Assigned To', 'Filed On', 'Resolved On', 'Rating'])
-
-    complaints = Complaint.objects.all().select_related('student', 'room')
-    for c in complaints:
-        room_no = c.room.room_number if c.room else 'N/A'
-        writer.writerow([
-            f"#{c.id}",
-            c.student.username,
-            room_no,
-            c.category,
-            c.title,
-            c.status,
-            c.assigned_to or 'Unassigned',
-            c.created_at.strftime('%Y-%m-%d'),
-            c.resolved_at.strftime('%Y-%m-%d') if c.resolved_at else 'Pending',
-            f"{c.rating} Stars" if c.rating else 'No rating'
         ])
     return response

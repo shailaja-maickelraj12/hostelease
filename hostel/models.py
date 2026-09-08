@@ -1,7 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import User
-from django.utils import timezone
 
+# User Profile & Role-Based Access
 class UserProfile(models.Model):
     ROLE_CHOICES = (
         ('student', 'Student'),
@@ -21,12 +21,13 @@ class UserProfile(models.Model):
         return f"{self.user.username} ({self.role})"
 
 
+# Module 1: Room Allotment & Vacancy Tracking Models
 class HostelBlock(models.Model):
     BLOCK_TYPES = (
         ('Boys', 'Boys Hostel'),
         ('Girls', 'Girls Hostel'),
     )
-    name = models.CharField(max_length=50)
+    name = models.CharField(max_length=50) # e.g. Block A (Ramanujan Hall)
     block_type = models.CharField(max_length=10, choices=BLOCK_TYPES)
     total_floors = models.PositiveIntegerField(default=3)
     description = models.TextField(blank=True)
@@ -46,16 +47,18 @@ class Room(models.Model):
     room_number = models.CharField(max_length=10)
     floor = models.PositiveIntegerField(default=1)
     room_type = models.CharField(max_length=20, choices=ROOM_TYPES, default='Double-NonAC')
-    capacity = models.PositiveIntegerField(default=2)
-    occupied_beds = models.PositiveIntegerField(default=0)
+    capacity = models.PositiveIntegerField(default=2) # Total bed capacity
+    occupied_beds = models.PositiveIntegerField(default=0) # Currently allocated beds
     rent_per_semester = models.DecimalField(max_digits=10, decimal_places=2, default=25000.00)
 
     @property
     def available_beds(self):
+        """Calculates vacant beds in real-time"""
         return max(0, self.capacity - self.occupied_beds)
 
     @property
     def is_full(self):
+        """Checks if room reached full capacity"""
         return self.occupied_beds >= self.capacity
 
     def __str__(self):
@@ -78,61 +81,3 @@ class RoomAllotment(models.Model):
 
     def __str__(self):
         return f"{self.student.username} - {self.room} ({self.status})"
-
-
-class FeePayment(models.Model):
-    FEE_TYPES = (
-        ('Hostel Rent', 'Hostel Rent Fee'),
-        ('Mess Fee', 'Mess / Dining Fee'),
-        ('Caution Deposit', 'Caution Deposit (Refundable)'),
-        ('Maintenance', 'Maintenance & Amenities'),
-    )
-    PAYMENT_STATUS = (
-        ('Pending', 'Pending'),
-        ('Paid', 'Paid'),
-        ('Failed', 'Failed'),
-    )
-    student = models.ForeignKey(User, on_delete=models.CASCADE, related_name='payments')
-    fee_type = models.CharField(max_length=30, choices=FEE_TYPES, default='Hostel Rent')
-    amount = models.DecimalField(max_digits=10, decimal_places=2)
-    due_date = models.DateField()
-    status = models.CharField(max_length=15, choices=PAYMENT_STATUS, default='Pending')
-    transaction_id = models.CharField(max_length=50, blank=True, null=True, unique=True)
-    payment_method = models.CharField(max_length=30, blank=True, null=True)
-    paid_at = models.DateTimeField(null=True, blank=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    def __str__(self):
-        return f"{self.student.username} - {self.fee_type} - Rs.{self.amount} ({self.status})"
-
-
-class Complaint(models.Model):
-    CATEGORY_CHOICES = (
-        ('Electrical', 'Electrical (Fans, Lights, Sockets)'),
-        ('Plumbing', 'Plumbing (Tap, Shower, Drainage)'),
-        ('Carpenter', 'Carpentry (Door, Cupboard, Bed)'),
-        ('Wi-Fi', 'Internet / Wi-Fi Connectivity'),
-        ('Cleanliness', 'Housekeeping / Washroom Cleaning'),
-        ('Other', 'Other Issues'),
-    )
-    STATUS_CHOICES = (
-        ('Pending', 'Pending'),
-        ('In-Progress', 'In-Progress'),
-        ('Resolved', 'Resolved'),
-    )
-    student = models.ForeignKey(User, on_delete=models.CASCADE, related_name='complaints')
-    room = models.ForeignKey(Room, on_delete=models.SET_NULL, null=True, blank=True)
-    category = models.CharField(max_length=30, choices=CATEGORY_CHOICES)
-    title = models.CharField(max_length=100)
-    description = models.TextField()
-    image = models.ImageField(upload_to='complaint_proofs/', blank=True, null=True)
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='Pending')
-    assigned_to = models.CharField(max_length=50, blank=True, null=True)
-    warden_remarks = models.TextField(blank=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    resolved_at = models.DateTimeField(null=True, blank=True)
-    rating = models.PositiveIntegerField(null=True, blank=True)
-    feedback = models.TextField(blank=True)
-
-    def __str__(self):
-        return f"[{self.category}] {self.title} - {self.status}"

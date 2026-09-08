@@ -6,10 +6,10 @@ os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'hostelease_project.settings')
 django.setup()
 
 from django.contrib.auth.models import User
-from hostel.models import UserProfile, HostelBlock, Room, RoomAllotment, FeePayment, Complaint
+from hostel.models import UserProfile, HostelBlock, Room, RoomAllotment
 
 def seed():
-    print("Seeding initial data for HostelEase...")
+    print("Seeding initial data for Member 1: Room Allotment & Vacancy Tracking...")
 
     # 1. Create Warden / Admin user
     if not User.objects.filter(username='warden').exists():
@@ -55,7 +55,7 @@ def seed():
         defaults={'block_type': 'Girls', 'total_floors': 3, 'description': 'Main Campus Girls Hostel'}
     )
 
-    # 4. Create Sample Rooms
+    # 4. Create Sample Rooms with vacancy configurations
     r1, _ = Room.objects.get_or_create(
         block=block_a,
         room_number="101",
@@ -77,30 +77,7 @@ def seed():
         defaults={'floor': 1, 'room_type': 'Double-AC', 'capacity': 2, 'occupied_beds': 0, 'rent_per_semester': 28000.00}
     )
     print("Created sample rooms across Block A and Block B.")
-
-    # 5. Create Sample Fee for student1
-    student_user = User.objects.get(username='student1')
-    FeePayment.objects.get_or_create(
-        student=student_user,
-        fee_type='Hostel Rent',
-        defaults={
-            'amount': 22000.00,
-            'due_date': timezone.now().date() + timezone.timedelta(days=15),
-            'status': 'Pending'
-        }
-    )
-    FeePayment.objects.get_or_create(
-        student=student_user,
-        fee_type='Mess Fee',
-        defaults={
-            'amount': 15000.00,
-            'due_date': timezone.now().date() + timezone.timedelta(days=15),
-            'status': 'Pending'
-        }
-    )
-    print("Created sample pending fees for student1.")
-
-    print("Data seeding completed successfully!")
+    print("Member 1 Data seeding completed successfully!")
 
 if __name__ == '__main__':
     seed()

@@ -1,6 +1,6 @@
 from django import forms
 from django.contrib.auth.models import User
-from .models import UserProfile, RoomAllotment, Complaint, Room
+from .models import UserProfile, RoomAllotment, Room
 
 class StudentRegistrationForm(forms.ModelForm):
     username = forms.CharField(max_length=150, widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Username'}))
@@ -51,53 +51,4 @@ class RoomApplicationForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # Show rooms that are not completely full
         self.fields['room'].queryset = Room.objects.all()
-
-
-class ComplaintForm(forms.ModelForm):
-    class Meta:
-        model = Complaint
-        fields = ['category', 'title', 'description', 'image']
-        widgets = {
-            'category': forms.Select(attrs={'class': 'form-select'}),
-            'title': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Brief title of problem'}),
-            'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 4, 'placeholder': 'Provide detailed explanation'}),
-            'image': forms.ClearableFileInput(attrs={'class': 'form-control'}),
-        }
-
-
-class ComplaintStatusUpdateForm(forms.ModelForm):
-    class Meta:
-        model = Complaint
-        fields = ['status', 'assigned_to', 'warden_remarks']
-        widgets = {
-            'status': forms.Select(attrs={'class': 'form-select'}),
-            'assigned_to': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Worker/Technician Name'}),
-            'warden_remarks': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'Action taken / remarks'}),
-        }
-
-
-class ComplaintFeedbackForm(forms.ModelForm):
-    RATING_CHOICES = [(i, f"{i} Stars") for i in range(1, 6)]
-    rating = forms.ChoiceField(choices=RATING_CHOICES, widget=forms.Select(attrs={'class': 'form-select'}))
-
-    class Meta:
-        model = Complaint
-        fields = ['rating', 'feedback']
-        widgets = {
-            'feedback': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'Was your complaint resolved satisfactorily?'}),
-        }
-
-
-class PaymentCheckoutForm(forms.Form):
-    PAYMENT_METHODS = (
-        ('UPI', 'UPI / QR Payment (Google Pay / PhonePe / Paytm)'),
-        ('Card', 'Debit / Credit Card'),
-        ('NetBanking', 'Internet Banking'),
-    )
-    payment_method = forms.ChoiceField(choices=PAYMENT_METHODS, widget=forms.RadioSelect)
-    upi_id = forms.CharField(required=False, widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'example@upi'}))
-    card_number = forms.CharField(required=False, widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Card Number (XXXX XXXX XXXX XXXX)'}))
-    expiry = forms.CharField(required=False, widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'MM/YY'}))
-    cvv = forms.CharField(required=False, widget=forms.PasswordInput(attrs={'class': 'form-control', 'placeholder': 'CVV'}))

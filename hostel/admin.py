@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import UserProfile, HostelBlock, Room, RoomAllotment, FeePayment, Complaint
+from .models import UserProfile, HostelBlock, Room, RoomAllotment
 
 @admin.register(UserProfile)
 class UserProfileAdmin(admin.ModelAdmin):
@@ -23,15 +23,3 @@ class RoomAllotmentAdmin(admin.ModelAdmin):
     list_display = ('student', 'room', 'status', 'applied_date', 'allotment_date')
     list_filter = ('status', 'room__block')
     search_fields = ('student__username', 'room__room_number')
-
-@admin.register(FeePayment)
-class FeePaymentAdmin(admin.ModelAdmin):
-    list_display = ('student', 'fee_type', 'amount', 'due_date', 'status', 'transaction_id', 'paid_at')
-    list_filter = ('status', 'fee_type')
-    search_fields = ('student__username', 'transaction_id')
-
-@admin.register(Complaint)
-class ComplaintAdmin(admin.ModelAdmin):
-    list_display = ('id', 'student', 'room', 'category', 'title', 'status', 'assigned_to', 'created_at', 'rating')
-    list_filter = ('status', 'category')
-    search_fields = ('title', 'student__username', 'room__room_number')

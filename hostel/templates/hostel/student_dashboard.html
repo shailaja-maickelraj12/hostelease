@@ -1,117 +1,82 @@
 {% extends 'hostel/base.html' %}
 
-{% block title %}Student Portal - HostelEase{% endblock %}
+{% block title %}Student Room Portal - HostelEase{% endblock %}
 
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
     <div>
-        <h2 class="fw-bold mb-1">Welcome, {{ user.first_name|default:user.username }}!</h2>
-        <span class="text-muted">Student ID: <strong>{{ user.profile.roll_number|default:"Not Assigned" }}</strong> &bull; {{ user.profile.department|default:"Department" }}</span>
+        <h2 class="fw-bold mb-1">Student Room Portal</h2>
+        <span class="text-muted">Welcome, <strong>{{ user.first_name|default:user.username }}</strong> &bull; Roll No: <strong>{{ user.profile.roll_number|default:"N/A" }}</strong></span>
     </div>
-    <div class="d-flex gap-2">
-        <a href="{% url 'room_list' %}" class="btn btn-primary"><i class="bi bi-door-open me-1"></i> Browse Rooms</a>
-        <a href="{% url 'submit_complaint' %}" class="btn btn-warning"><i class="bi bi-tools me-1"></i> Lodge Complaint</a>
+    <div>
+        <a href="{% url 'room_list' %}" class="btn btn-primary"><i class="bi bi-door-open me-1"></i> Browse Rooms &amp; Vacancy</a>
     </div>
 </div>
 
 <div class="row g-4 mb-4">
-    <!-- Room Status Card -->
-    <div class="col-md-4">
-        <div class="card p-4 h-100 stat-card border-primary">
-            <h6 class="text-muted text-uppercase fw-semibold mb-2">Room Allotment</h6>
+    <!-- Room Allotment Status Card -->
+    <div class="col-md-7">
+        <div class="card p-4 h-100 stat-card border-primary bg-white shadow-sm">
+            <h5 class="fw-bold mb-3"><i class="bi bi-house-door-fill text-primary me-2"></i>My Room Allocation Status</h5>
             {% if allotment %}
-                <h4 class="fw-bold text-dark mb-1">Room {{ allotment.room.room_number }}</h4>
-                <p class="text-muted mb-2">{{ allotment.room.block.name }} &bull; Floor {{ allotment.room.floor }}</p>
-                <span class="badge bg-success-subtle text-success w-fit">Allotted</span>
-                <div class="mt-3">
-                    <a href="{% url 'my_room' %}" class="btn btn-sm btn-outline-primary">View Roommates &amp; Info</a>
+                <div class="p-3 bg-light rounded mb-3">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <h4 class="fw-bold text-dark mb-0">Room {{ allotment.room.room_number }}</h4>
+                        <span class="badge bg-success fs-6">Allotted</span>
+                    </div>
+                    <p class="text-muted mb-1">{{ allotment.room.block.name }} &bull; Floor {{ allotment.room.floor }}</p>
+                    <p class="text-muted mb-0">Room Type: <strong>{{ allotment.room.get_room_type_display }}</strong></p>
+                </div>
+                <div class="d-flex gap-2">
+                    <a href="{% url 'my_room' %}" class="btn btn-outline-primary"><i class="bi bi-people me-1"></i> View Roommates &amp; Info</a>
                 </div>
             {% elif pending_app %}
-                <h4 class="fw-bold text-warning mb-1">Application Pending</h4>
-                <p class="text-muted mb-2">Requested: Room {{ pending_app.room.room_number }} ({{ pending_app.room.block.name }})</p>
-                <span class="badge bg-warning-subtle text-warning">Awaiting Warden Approval</span>
+                <div class="p-3 bg-warning-subtle rounded mb-3">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <h5 class="fw-bold text-dark mb-0">Application Pending Review</h5>
+                        <span class="badge bg-warning text-dark">Pending Warden Approval</span>
+                    </div>
+                    <p class="text-muted mb-1">Requested Room: <strong>Room {{ pending_app.room.room_number }}</strong> ({{ pending_app.room.block.name }})</p>
+                    <small class="text-muted">Submitted on: {{ pending_app.applied_date|date:"M d, Y H:i" }}</small>
+                </div>
             {% else %}
-                <h4 class="fw-bold text-secondary mb-1">No Room Allotted</h4>
-                <p class="text-muted mb-3">You have not applied for a hostel room yet.</p>
-                <a href="{% url 'room_list' %}" class="btn btn-sm btn-primary">Apply for a Room</a>
+                <div class="p-4 bg-light rounded text-center my-3">
+                    <i class="bi bi-exclamation-circle text-secondary fs-1 mb-2"></i>
+                    <h5 class="fw-bold">No Room Application Submitted</h5>
+                    <p class="text-muted small mb-3">Explore open rooms and pick your preferred block and sharing configuration.</p>
+                    <a href="{% url 'room_list' %}" class="btn btn-primary btn-sm px-4">Browse &amp; Apply for Room</a>
+                </div>
             {% endif %}
         </div>
     </div>
 
-    <!-- Fee Due Card -->
-    <div class="col-md-4">
-        <div class="card p-4 h-100 stat-card border-danger">
-            <h6 class="text-muted text-uppercase fw-semibold mb-2">Outstanding Dues</h6>
-            <h3 class="fw-bold text-danger mb-1">Rs. {{ pending_fee }}</h3>
-            <p class="text-muted mb-3">Pending hostel &amp; mess payments</p>
-            <div>
-                <a href="{% url 'student_fees' %}" class="btn btn-sm btn-outline-danger">Fee Ledger &amp; Pay &rarr;</a>
-            </div>
+    <!-- Student Profile Summary -->
+    <div class="col-md-5">
+        <div class="card p-4 h-100 bg-white shadow-sm">
+            <h5 class="fw-bold mb-3"><i class="bi bi-person-lines-fill text-secondary me-2"></i>Profile Information</h5>
+            <ul class="list-group list-group-flush">
+                <li class="list-group-item d-flex justify-content-between px-0">
+                    <span class="text-muted">Username:</span>
+                    <strong>{{ user.username }}</strong>
+                </li>
+                <li class="list-group-item d-flex justify-content-between px-0">
+                    <span class="text-muted">Department:</span>
+                    <span>{{ user.profile.department|default:"N/A" }}</span>
+                </li>
+                <li class="list-group-item d-flex justify-content-between px-0">
+                    <span class="text-muted">Gender:</span>
+                    <span>{{ user.profile.gender }}</span>
+                </li>
+                <li class="list-group-item d-flex justify-content-between px-0">
+                    <span class="text-muted">Contact:</span>
+                    <span>{{ user.profile.phone_number|default:"N/A" }}</span>
+                </li>
+                <li class="list-group-item d-flex justify-content-between px-0">
+                    <span class="text-muted">Guardian Name:</span>
+                    <span>{{ user.profile.guardian_name|default:"N/A" }}</span>
+                </li>
+            </ul>
         </div>
     </div>
-
-    <!-- Maintenance Summary Card -->
-    <div class="col-md-4">
-        <div class="card p-4 h-100 stat-card border-warning">
-            <h6 class="text-muted text-uppercase fw-semibold mb-2">Maintenance Grievances</h6>
-            <h4 class="fw-bold text-dark mb-1">{{ recent_complaints.count }} Tickets</h4>
-            <p class="text-muted mb-3">Track filed maintenance requests</p>
-            <div>
-                <a href="{% url 'complaint_list' %}" class="btn btn-sm btn-outline-warning">View All Tickets &rarr;</a>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Recent Maintenance Updates Table -->
-<div class="card p-4">
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <h5 class="fw-bold mb-0"><i class="bi bi-clock-history me-2"></i>Recent Maintenance Requests</h5>
-        <a href="{% url 'submit_complaint' %}" class="btn btn-sm btn-primary">+ New Request</a>
-    </div>
-    {% if recent_complaints %}
-        <div class="table-responsive">
-            <table class="table align-middle">
-                <thead class="table-light">
-                    <tr>
-                        <th>Ticket ID</th>
-                        <th>Category</th>
-                        <th>Title</th>
-                        <th>Filed On</th>
-                        <th>Status</th>
-                        <th>Action</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for c in recent_complaints %}
-                        <tr>
-                            <td><strong>#{{ c.id }}</strong></td>
-                            <td><span class="badge bg-secondary-subtle text-dark">{{ c.category }}</span></td>
-                            <td>{{ c.title }}</td>
-                            <td>{{ c.created_at|date:"M d, Y" }}</td>
-                            <td>
-                                {% if c.status == 'Resolved' %}
-                                    <span class="badge bg-success">Resolved</span>
-                                {% elif c.status == 'In-Progress' %}
-                                    <span class="badge bg-warning text-dark">In-Progress</span>
-                                {% else %}
-                                    <span class="badge bg-secondary">Pending</span>
-                                {% endif %}
-                            </td>
-                            <td>
-                                {% if c.status == 'Resolved' and not c.rating %}
-                                    <a href="{% url 'complaint_feedback' c.id %}" class="btn btn-sm btn-outline-success">Rate Service</a>
-                                {% else %}
-                                    <span class="text-muted small">{{ c.warden_remarks|default:"In Review"|truncatechars:25 }}</span>
-                                {% endif %}
-                            </td>
-                        </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    {% else %}
-        <p class="text-muted mb-0">No maintenance complaints registered.</p>
-    {% endif %}
 </div>
 {% endblock %}
