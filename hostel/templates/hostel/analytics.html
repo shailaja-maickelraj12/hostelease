@@ -1,0 +1,106 @@
+{% extends 'hostel/base.html' %}
+{% block title %}Analytics - Warden{% endblock %}
+
+{% block content %}
+
+<h2 class="fw-bold mb-4">
+    Campus Hostel Analytics
+</h2>
+
+<div class="row g-4">
+
+    <div class="col-lg-7">
+
+        <div class="card border-0 shadow-sm p-3 h-100">
+
+            <h5 class="fw-bold">
+                Bed Occupancy by Block
+            </h5>
+
+            <canvas id="occupancyChart"></canvas>
+
+        </div>
+
+    </div>
+
+    <div class="col-lg-5">
+
+        <div class="card border-0 shadow-sm p-3 h-100">
+
+            <h5 class="fw-bold">
+                Complaints by Category
+            </h5>
+
+            <canvas id="complaintChart"></canvas>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+
+    const bLabels = {{ block_labels|safe }};
+    const bOcc = {{ block_occupied|safe }};
+    const bCap = {{ block_capacity|safe }};
+
+    new Chart(document.getElementById('occupancyChart'), {
+
+        type: 'bar',
+
+        data: {
+            labels: bLabels,
+
+            datasets: [
+                {
+                    label: 'Occupied Beds',
+                    data: bOcc,
+                    backgroundColor: '#0d6efd'
+                },
+
+                {
+                    label: 'Total Capacity',
+                    data: bCap,
+                    backgroundColor: '#e9ecef'
+                }
+            ]
+        }
+
+    });
+
+
+    const cLabels = {{ category_labels|safe }};
+    const cCounts = {{ category_counts|safe }};
+
+    new Chart(document.getElementById('complaintChart'), {
+
+        type: 'pie',
+
+        data: {
+            labels: cLabels,
+
+            datasets: [
+                {
+                    data: cCounts,
+
+                    backgroundColor: [
+                        '#ffc107',
+                        '#0d6efd',
+                        '#198754',
+                        '#dc3545',
+                        '#6f42c1',
+                        '#20c997'
+                    ]
+                }
+            ]
+        }
+
+    });
+
+</script>
+
+{% endblock %}

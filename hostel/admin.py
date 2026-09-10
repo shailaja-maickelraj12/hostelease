@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import UserProfile, HostelBlock, Room, RoomAllotment
+from .models import UserProfile, HostelBlock, Room, RoomAllotment, Complaint
 
 @admin.register(UserProfile)
 class UserProfileAdmin(admin.ModelAdmin):
@@ -23,3 +23,21 @@ class RoomAllotmentAdmin(admin.ModelAdmin):
     list_display = ('student', 'room', 'status', 'applied_date', 'allotment_date')
     list_filter = ('status', 'room__block')
     search_fields = ('student__username', 'room__room_number')
+
+@admin.register(Complaint)
+class ComplaintAdmin(admin.ModelAdmin):
+    list_display = (
+        'id',
+        'student',
+        'category',
+        'title',
+        'status',
+        'assigned_to',
+        'created_at',
+        'rating'
+    )
+
+    list_filter = (
+        'status',
+        'category'
+    )

@@ -81,3 +81,36 @@ class RoomAllotment(models.Model):
 
     def __str__(self):
         return f"{self.student.username} - {self.room} ({self.status})"
+    
+class Complaint(models.Model):
+    CATEGORY_CHOICES = (
+        ('Electrical', 'Electrical (Fans, Lights, Sockets)'),
+        ('Plumbing', 'Plumbing (Tap, Shower, Drainage)'),
+        ('Carpenter', 'Carpentry (Door, Cupboard, Bed)'),
+        ('Wi-Fi', 'Internet / Wi-Fi Connectivity'),
+        ('Cleanliness', 'Housekeeping / Washroom Cleaning'),
+        ('Other', 'Other Issues'),
+    )
+
+    STATUS_CHOICES = (
+        ('Pending', 'Pending'),
+        ('In-Progress', 'In-Progress'),
+        ('Resolved', 'Resolved'),
+    )
+
+    student = models.ForeignKey(User, on_delete=models.CASCADE, related_name='complaints')
+    room = models.ForeignKey(Room, on_delete=models.SET_NULL, null=True, blank=True)
+    category = models.CharField(max_length=30, choices=CATEGORY_CHOICES)
+    title = models.CharField(max_length=100)
+    description = models.TextField()
+    image = models.ImageField(upload_to='complaint_proofs/', blank=True, null=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='Pending')
+    assigned_to = models.CharField(max_length=50, blank=True, null=True)
+    warden_remarks = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    resolved_at = models.DateTimeField(null=True, blank=True)
+    rating = models.PositiveIntegerField(null=True, blank=True)
+    feedback = models.TextField(blank=True)
+
+    def __str__(self):
+        return f"[{self.category}] {self.title} - {self.status}"
