@@ -1,0 +1,50 @@
+{% extends 'hostel/base.html' %}
+{% block title %}Update Ticket #{{ complaint.id }}{% endblock %}
+
+{% block content %}
+
+<div class="row justify-content-center">
+    <div class="col-lg-6">
+
+        <div class="card border-0 shadow-sm p-4">
+
+            <h4 class="fw-bold mb-3">
+                Update Ticket #{{ complaint.id }}
+            </h4>
+
+            <div class="alert alert-light border">
+                <strong>{{ complaint.title }}</strong>
+                <br>
+                <small>{{ complaint.description }}</small>
+            </div>
+
+            <form method="POST">
+                {% csrf_token %}
+
+                <div class="mb-3">
+                    <label>Update Status</label>
+                    {{ form.status }}
+                </div>
+
+                <div class="mb-3">
+                    <label>Assign Technician / Worker</label>
+                    {{ form.assigned_to }}
+                </div>
+
+                <div class="mb-3">
+                    <label>Warden Remarks / Action Taken</label>
+                    {{ form.warden_remarks }}
+                </div>
+
+                <button class="btn btn-primary w-100">
+                    Save Updates
+                </button>
+
+            </form>
+
+        </div>
+
+    </div>
+</div>
+
+{% endblock %}

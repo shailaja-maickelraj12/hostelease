@@ -1,0 +1,43 @@
+{% extends 'hostel/base.html' %}
+{% block title %}Rate Service - HostelEase{% endblock %}
+
+{% block content %}
+
+<div class="row justify-content-center">
+    <div class="col-lg-6">
+
+        <div class="card border-0 shadow-sm p-4">
+
+            <h4 class="fw-bold">
+                Rate Maintenance Service
+            </h4>
+
+            <p class="text-muted">
+                How was your experience with ticket #{{ complaint.id }}?
+            </p>
+
+            <form method="POST">
+                {% csrf_token %}
+
+                <div class="mb-3">
+                    <label>Rating</label>
+                    {{ form.rating }}
+                </div>
+
+                <div class="mb-3">
+                    <label>Feedback</label>
+                    {{ form.feedback }}
+                </div>
+
+                <button class="btn btn-success w-100">
+                    Submit Feedback
+                </button>
+
+            </form>
+
+        </div>
+
+    </div>
+</div>
+
+{% endblock %}

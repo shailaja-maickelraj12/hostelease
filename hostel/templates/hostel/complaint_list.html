@@ -1,0 +1,103 @@
+{% extends 'hostel/base.html' %}
+{% block title %}My Complaints - HostelEase{% endblock %}
+
+{% block content %}
+
+<div class="d-flex justify-content-between mb-4">
+    <div>
+        <h2 class="fw-bold">My Maintenance Tickets</h2>
+        <p class="text-muted">Track issues reported in your room.</p>
+    </div>
+
+    <a href="{% url 'submit_complaint' %}" class="btn btn-warning h-100">
+        <i class="bi bi-plus-lg"></i> Lodge Ticket
+    </a>
+</div>
+
+<div class="row g-3">
+
+    {% for c in complaints %}
+
+    <div class="col-md-6">
+        <div class="card border-0 shadow-sm p-3">
+
+            <div class="d-flex justify-content-between">
+                <h5 class="fw-bold">
+                    #{{ c.id }} {{ c.title }}
+                </h5>
+
+                {% if c.status == 'Pending' %}
+                    <span class="badge bg-secondary">Pending</span>
+
+                {% elif c.status == 'In-Progress' %}
+                    <span class="badge bg-primary">In Progress</span>
+
+                {% else %}
+                    <span class="badge bg-success">Resolved</span>
+                {% endif %}
+            </div>
+
+            <small class="text-muted">
+                {{ c.category }} • {{ c.created_at|date:"d M Y" }}
+            </small>
+
+            <p class="mt-2">
+                {{ c.description }}
+            </p>
+
+            {% if c.image %}
+                <img src="{{ c.image.url }}"
+                     class="img-thumbnail mb-2"
+                     style="max-height: 100px; width: auto;">
+            {% endif %}
+
+            {% if c.assigned_to %}
+
+                <div class="alert alert-light border py-2 small mb-2">
+                    <i class="bi bi-person-gear"></i>
+                    Assigned to:
+                    <strong>{{ c.assigned_to }}</strong>
+                </div>
+
+            {% else %}
+
+                <small class="text-muted">
+                    <i class="bi bi-hourglass"></i>
+                    In Queue
+                </small>
+
+            {% endif %}
+
+            {% if c.status == 'Resolved' and not c.rating %}
+
+                <a href="{% url 'complaint_feedback' c.id %}"
+                   class="btn btn-sm btn-outline-success mt-2">
+                    ⭐ Rate Service
+                </a>
+
+            {% elif c.rating %}
+
+                <div class="text-warning mt-2">
+                    Your Rating: {{ c.rating }}/5
+                </div>
+
+            {% endif %}
+
+        </div>
+    </div>
+
+    {% empty %}
+
+    <div class="col-12 text-center py-5">
+
+        <i class="bi bi-check-circle display-1 text-success opacity-25"></i>
+
+        <h5>No complaints found.</h5>
+
+    </div>
+
+    {% endfor %}
+
+</div>
+
+{% endblock %}
