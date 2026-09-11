@@ -1,0 +1,19 @@
+{% extends 'hostel/base.html' %}
+{% block title %}Lodge Complaint - HostelEase{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-6">
+        <div class="card p-4 bg-white shadow-sm">
+            <h4 class="fw-bold mb-3"><i class="bi bi-tools text-warning me-2"></i>Lodge Maintenance Request</h4>
+            <form method="POST" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="mb-3"><label class="form-label fw-semibold">Category</label>{{ form.category }}</div>
+                <div class="mb-3"><label class="form-label fw-semibold">Issue Title</label>{{ form.title }}</div>
+                <div class="mb-3"><label class="form-label fw-semibold">Description</label>{{ form.description }}</div>
+                <div class="mb-3"><label class="form-label fw-semibold">Photo Evidence (Optional)</label>{{ form.image }}</div>
+                <button type="submit" class="btn btn-warning w-100 fw-semibold">Submit Ticket</button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

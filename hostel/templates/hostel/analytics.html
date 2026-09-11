@@ -1,0 +1,47 @@
+
+{% extends 'hostel/base.html' %}
+{% block title %}Hostel Analytics - HostelEase{% endblock %}
+{% block content %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<h2 class="fw-bold mb-4"><i class="bi bi-graph-up-arrow text-primary me-2"></i>Campus Hostel Analytics</h2>
+<div class="row g-4">
+    <div class="col-lg-7">
+        <div class="card p-4 bg-white shadow-sm">
+            <h5>Hostel Bed Occupancy by Block</h5>
+            <canvas id="occupancyChart" height="200"></canvas>
+        </div>
+    </div>
+    <div class="col-lg-5">
+        <div class="card p-4 bg-white shadow-sm">
+            <h5>Complaints by Category</h5>
+            <canvas id="catChart" height="200"></canvas>
+        </div>
+    </div>
+</div>
+{{ block_labels|json_script:"b-labels" }}
+{{ block_occupied|json_script:"b-occ" }}
+{{ block_capacity|json_script:"b-cap" }}
+{{ category_labels|json_script:"c-labels" }}
+{{ category_counts|json_script:"c-counts" }}
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    new Chart(document.getElementById('occupancyChart'), {
+        type: 'bar',
+        data: {
+            labels: JSON.parse(document.getElementById('b-labels').textContent),
+            datasets: [
+                { label: 'Occupied Beds', data: JSON.parse(document.getElementById('b-occ').textContent), backgroundColor: '#3b82f6' },
+                { label: 'Total Capacity', data: JSON.parse(document.getElementById('b-cap').textContent), backgroundColor: '#cbd5e1' }
+            ]
+        }
+    });
+    new Chart(document.getElementById('catChart'), {
+        type: 'pie',
+        data: {
+            labels: JSON.parse(document.getElementById('c-labels').textContent),
+            datasets: [{ data: JSON.parse(document.getElementById('c-counts').textContent), backgroundColor: ['#f59e0b', '#ef4444', '#10b981', '#6366f1'] }]
+        }
+    });
+});
+</script>
+{% endblock %}

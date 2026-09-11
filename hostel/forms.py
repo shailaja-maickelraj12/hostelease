@@ -52,3 +52,35 @@ class RoomApplicationForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields['room'].queryset = Room.objects.all()
+
+
+
+from .models import Complaint
+class ComplaintForm(forms.ModelForm):
+    class Meta:
+        model = Complaint
+        fields = ['category', 'title', 'description', 'image']
+        widgets = {
+            'category': forms.Select(attrs={'class': 'form-select'}),
+            'title': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Brief title of problem'}),
+            'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 4, 'placeholder': 'Provide detailed explanation'}),
+            'image': forms.ClearableFileInput(attrs={'class': 'form-control'}),
+        }
+class ComplaintStatusUpdateForm(forms.ModelForm):
+    class Meta:
+        model = Complaint
+        fields = ['status', 'assigned_to', 'warden_remarks']
+        widgets = {
+            'status': forms.Select(attrs={'class': 'form-select'}),
+            'assigned_to': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Worker/Technician Name'}),
+            'warden_remarks': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'Action taken / remarks'}),
+        }
+class ComplaintFeedbackForm(forms.ModelForm):
+    RATING_CHOICES = [(i, f"{i} Stars") for i in range(1, 6)]
+    rating = forms.ChoiceField(choices=RATING_CHOICES, widget=forms.Select(attrs={'class': 'form-select'}))
+    class Meta:
+        model = Complaint
+        fields = ['rating', 'feedback']
+        widgets = {
+            'feedback': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'Was your complaint resolved satisfactorily?'}),
+        }

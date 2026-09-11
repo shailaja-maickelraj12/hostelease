@@ -261,3 +261,83 @@ def export_allotments_csv(request):
             a.status
         ])
     return response
+
+
+from .models import Complaint
+from .forms import ComplaintForm, ComplaintStatusUpdateForm, ComplaintFeedbackForm
+@student_required
+def complaint_list(request):
+    complaints = Complaint.objects.filter(student=request.user).order_by('-created_at')
+    return render(request, 'hostel/complaint_list.html', {'complaints': complaints})
+@student_required
+def submit_complaint(request):
+    allotment = RoomAllotment.objects.filter(student=request.user, status='Approved').first()
+    if request.method == 'POST':
+        form = ComplaintForm(request.POST, request.FILES)
+        if form.is_valid():
+            complaint = form.save(commit=False)
+            complaint.student = request.user
+            if allotment:
+                complaint.room = allotment.room
+            complaint.save()
+            messages.success(request, "Maintenance ticket filed successfully!")
+            return redirect('complaint_list')
+    else:
+        form = ComplaintForm()
+    return render(request, 'hostel/submit_complaint.html', {'form': form, 'allotment': allotment})
+@student_required
+def complaint_feedback(request, complaint_id):
+    complaint = get_object_or_404(Complaint, id=complaint_id, student=request.user, status='Resolved')
+    if request.method == 'POST':
+        form = ComplaintFeedbackForm(request.POST, instance=complaint)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Thank you for your rating!")
+            return redirect('complaint_list')
+    else:
+        form = ComplaintFeedbackForm(instance=complaint)
+    return render(request, 'hostel/complaint_feedback.html', {'complaint': complaint, 'form': form})
+@warden_required
+def manage_complaints(request):
+    complaints = Complaint.objects.all().order_by('-created_at')
+    return render(request, 'hostel/manage_complaints.html', {'complaints': complaints})
+@warden_required
+def update_complaint(request, complaint_id):
+    complaint = get_object_or_404(Complaint, id=complaint_id)
+    if request.method == 'POST':
+        form = ComplaintStatusUpdateForm(request.POST, instance=complaint)
+        if form.is_valid():
+            updated = form.save(commit=False)
+            if updated.status == 'Resolved' and not updated.resolved_at:
+                updated.resolved_at = timezone.now()
+            updated.save()
+            messages.success(request, "Ticket updated!")
+            return redirect('manage_complaints')
+    else:
+        form = ComplaintStatusUpdateForm(instance=complaint)
+    return render(request, 'hostel/update_complaint.html', {'complaint': complaint, 'form': form})
+@warden_required
+def analytics_dashboard(request):
+    blocks = HostelBlock.objects.all()
+    block_labels = [b.name for b in blocks]
+    block_occupied = [b.rooms.aggregate(total=Sum('occupied_beds'))['total'] or 0 for b in blocks]
+    block_capacity = [b.rooms.aggregate(total=Sum('capacity'))['total'] or 0 for b in blocks]
+    categories = Complaint.objects.values('category').annotate(count=Count('id'))
+    category_labels = [c['category'] for c in categories]
+    category_counts = [c['count'] for c in categories]
+    return render(request, 'hostel/analytics.html', {
+        'block_labels': block_labels,
+        'block_occupied': block_occupied,
+        'block_capacity': block_capacity,
+        'category_labels': category_labels,
+        'category_counts': category_counts,
+    })
+@warden_required
+def export_complaints_csv(request):
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = 'attachment; filename="complaints.csv"'
+    writer = csv.writer(response)
+    writer.writerow(['Ticket ID', 'Student', 'Category', 'Title', 'Status', 'Date'])
+    for c in Complaint.objects.all():
+        writer.writerow([c.id, c.student.username, c.category, c.title, c.status, c.created_at.strftime('%Y-%m-%d')])
+    return response
