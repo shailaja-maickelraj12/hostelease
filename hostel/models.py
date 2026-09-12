@@ -111,5 +111,5 @@ class Complaint(models.Model):
     resolved_at = models.DateTimeField(null=True, blank=True)
     rating = models.PositiveIntegerField(null=True, blank=True)
     feedback = models.TextField(blank=True)
-    def _str_(self):
+    def __str__(self):
         return f"[{self.category}] {self.title} - {self.status}"

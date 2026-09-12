@@ -1,0 +1,40 @@
+{% extends 'hostel/base.html' %}
+
+{% block title %}Rate Maintenance Resolution - HostelEase{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card p-4 p-md-5 bg-white shadow-sm">
+            <div class="text-center mb-4">
+                <i class="bi bi-star-fill text-warning display-4"></i>
+                <h3 class="fw-bold mt-2">Rate Service Resolution</h3>
+                <p class="text-muted">Ticket #{{ complaint.id }} - {{ complaint.title }}</p>
+            </div>
+
+            <div class="bg-light p-3 rounded mb-4">
+                <small class="text-muted d-block">Staff Assigned: <strong>{{ complaint.assigned_to|default:"Hostel Maintenance Team" }}</strong></small>
+                <small class="text-muted d-block">Warden Remarks: <strong>{{ complaint.warden_remarks|default:"Resolution Completed" }}</strong></small>
+            </div>
+
+            <form method="POST">
+                {% csrf_token %}
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Service Rating (1 to 5 Stars) *</label>
+                    {{ form.rating }}
+                </div>
+
+                <div class="mb-4">
+                    <label class="form-label fw-semibold">Student Feedback &amp; Comments</label>
+                    {{ form.feedback }}
+                </div>
+
+                <div class="d-grid gap-2">
+                    <button type="submit" class="btn btn-success btn-lg fw-semibold">Submit Rating</button>
+                    <a href="{% url 'complaint_list' %}" class="btn btn-outline-secondary">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
