@@ -6,7 +6,7 @@ os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'hostelease_project.settings')
 django.setup()
 
 from django.contrib.auth.models import User
-from hostel.models import UserProfile, HostelBlock, Room, RoomAllotment
+from hostel.models import UserProfile, HostelBlock, Room, RoomAllotment, FeePayment
 
 def seed():
     print("Seeding initial data for Member 1: Room Allotment & Vacancy Tracking...")
@@ -44,6 +44,7 @@ def seed():
             guardian_phone='9111122222'
         )
         print("Created Student: username='student1', password='student123'")
+    student_user = User.objects.get(username='student1')
 
     # 3. Create Hostel Blocks
     block_a, _ = HostelBlock.objects.get_or_create(
@@ -111,8 +112,32 @@ def seed():
         room_number="302",
         defaults={'floor': 3, 'room_type': 'Triple-NonAC', 'capacity': 3, 'occupied_beds': 0, 'rent_per_semester': 20000.00}
     )
+    # 5. Create Sample Fee Payments for Student
+    FeePayment.objects.get_or_create(
+        student=student_user,
+        fee_type='Hostel Rent',
+        defaults={
+            'amount': 22000.00,
+            'due_date': timezone.now().date() + timezone.timedelta(days=15),
+            'status': 'Pending'
+        }
+    )
+    FeePayment.objects.get_or_create(
+        student=student_user,
+        fee_type='Mess Fee',
+        defaults={
+            'amount': 15000.00,
+            'due_date': timezone.now().date() - timezone.timedelta(days=10),
+            'status': 'Paid',
+            'transaction_id': 'TXN-DEMO8942A',
+            'payment_method': 'UPI',
+            'paid_at': timezone.now() - timezone.timedelta(days=10)
+        }
+    )
     print("Created sample rooms across Block A and Block B.")
-    print("Member 1 Data seeding completed successfully!")
+    print("Seeded sample Fee Payments for Member 2.")
+    print("All Modules (1, 2, 3) data seeding completed successfully!")
 
 if __name__ == '__main__':
     seed()
+

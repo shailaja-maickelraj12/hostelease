@@ -84,3 +84,16 @@ class ComplaintFeedbackForm(forms.ModelForm):
         widgets = {
             'feedback': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'Was your complaint resolved satisfactorily?'}),
         }
+
+
+class PaymentCheckoutForm(forms.Form):
+    PAYMENT_METHODS = (
+        ('UPI', 'UPI / QR Payment (Google Pay / PhonePe / Paytm)'),
+        ('Card', 'Debit / Credit Card'),
+        ('NetBanking', 'Internet Banking'),
+    )
+    payment_method = forms.ChoiceField(choices=PAYMENT_METHODS, widget=forms.RadioSelect)
+    upi_id = forms.CharField(required=False, widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'example@upi'}))
+    card_number = forms.CharField(required=False, widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Card Number (XXXX XXXX XXXX XXXX)'}))
+    expiry = forms.CharField(required=False, widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'MM/YY'}))
+    cvv = forms.CharField(required=False, widget=forms.PasswordInput(attrs={'class': 'form-control', 'placeholder': 'CVV'}))

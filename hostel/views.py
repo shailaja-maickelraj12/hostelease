@@ -1,4 +1,5 @@
 import csv
+import uuid
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import login, authenticate, logout
 from django.contrib.auth.forms import AuthenticationForm
@@ -8,8 +9,11 @@ from django.http import HttpResponse
 from django.utils import timezone
 from django.db.models import Sum, Count
 
-from .models import UserProfile, HostelBlock, Room, RoomAllotment
-from .forms import StudentRegistrationForm, RoomApplicationForm
+from .models import UserProfile, HostelBlock, Room, RoomAllotment, FeePayment, Complaint
+from .forms import (
+    StudentRegistrationForm, RoomApplicationForm, PaymentCheckoutForm,
+    ComplaintForm, ComplaintStatusUpdateForm, ComplaintFeedbackForm
+)
 
 # ==========================================
 # AUTHENTICATION & ROLE-BASED ACCESS
@@ -221,7 +225,18 @@ def update_allotment_status(request, allotment_id, new_status):
         room.occupied_beds += 1
         room.save()
 
-        messages.success(request, f"Room {room.room_number} allotted to {allotment.student.username}.")
+        # Auto-generate initial semester fee for student
+        FeePayment.objects.get_or_create(
+            student=allotment.student,
+            fee_type='Hostel Rent',
+            defaults={
+                'amount': room.rent_per_semester,
+                'due_date': timezone.now().date() + timezone.timedelta(days=15),
+                'status': 'Pending'
+            }
+        )
+
+        messages.success(request, f"Room {room.room_number} allotted to {allotment.student.username}. Semester fee generated.")
 
     elif new_status == 'Rejected':
         allotment.status = 'Rejected'
@@ -263,8 +278,88 @@ def export_allotments_csv(request):
     return response
 
 
-from .models import Complaint
-from .forms import ComplaintForm, ComplaintStatusUpdateForm, ComplaintFeedbackForm
+# ==========================================
+# MODULE 2: FEE PAYMENT INTEGRATION
+# ==========================================
+
+@student_required
+def student_fees(request):
+    payments = FeePayment.objects.filter(student=request.user).order_by('-due_date')
+    pending_total = payments.filter(status='Pending').aggregate(total=Sum('amount'))['total'] or 0
+    paid_total = payments.filter(status='Paid').aggregate(total=Sum('amount'))['total'] or 0
+
+    return render(request, 'hostel/student_fees.html', {
+        'payments': payments,
+        'pending_total': pending_total,
+        'paid_total': paid_total,
+    })
+
+
+@student_required
+def pay_fee(request, payment_id):
+    payment = get_object_or_404(FeePayment, id=payment_id, student=request.user)
+    if payment.status == 'Paid':
+        messages.info(request, "This fee has already been settled.")
+        return redirect('fee_receipt', payment_id=payment.id)
+
+    if request.method == 'POST':
+        form = PaymentCheckoutForm(request.POST)
+        if form.is_valid():
+            method = form.cleaned_data['payment_method']
+            # Simulate Payment Gateway success
+            payment.status = 'Paid'
+            payment.payment_method = method
+            payment.transaction_id = f"TXN-{uuid.uuid4().hex[:10].upper()}"
+            payment.paid_at = timezone.now()
+            payment.save()
+
+            messages.success(request, f"Payment of Rs.{payment.amount} successful! Transaction ID: {payment.transaction_id}")
+            return redirect('fee_receipt', payment_id=payment.id)
+    else:
+        form = PaymentCheckoutForm()
+
+    return render(request, 'hostel/pay_fee.html', {
+        'payment': payment,
+        'form': form,
+    })
+
+
+@login_required
+def fee_receipt(request, payment_id):
+    if request.user.is_staff or (hasattr(request.user, 'profile') and request.user.profile.role == 'warden'):
+        payment = get_object_or_404(FeePayment, id=payment_id)
+    else:
+        payment = get_object_or_404(FeePayment, id=payment_id, student=request.user)
+
+    allotment = RoomAllotment.objects.filter(student=payment.student, status='Approved').first()
+    return render(request, 'hostel/fee_receipt.html', {
+        'payment': payment,
+        'allotment': allotment,
+    })
+
+
+@warden_required
+def warden_fee_tracker(request):
+    status_filter = request.GET.get('status')
+    payments = FeePayment.objects.all().order_by('-due_date')
+    if status_filter:
+        payments = payments.filter(status=status_filter)
+
+    total_collected = FeePayment.objects.filter(status='Paid').aggregate(total=Sum('amount'))['total'] or 0
+    total_pending = FeePayment.objects.filter(status='Pending').aggregate(total=Sum('amount'))['total'] or 0
+
+    return render(request, 'hostel/warden_fees.html', {
+        'payments': payments,
+        'total_collected': total_collected,
+        'total_pending': total_pending,
+        'status_filter': status_filter,
+    })
+
+
+# ==========================================
+# MODULE 3: COMPLAINT MANAGEMENT & ANALYTICS
+# ==========================================
+
 @student_required
 def complaint_list(request):
     complaints = Complaint.objects.filter(student=request.user).order_by('-created_at')

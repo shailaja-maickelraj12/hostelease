@@ -60,10 +60,15 @@
                     {% if user.is_authenticated %}
                         {% if user.profile.role == 'warden' or user.is_staff %}
                             <li class="nav-item"><a class="nav-link" href="{% url 'warden_dashboard' %}"><i class="bi bi-speedometer2 me-1"></i> Dashboard</a></li>
-                            <li class="nav-item"><a class="nav-link" href="{% url 'manage_allotments' %}"><i class="bi bi-card-checklist me-1"></i> Manage Allotments</a></li>
+                            <li class="nav-item"><a class="nav-link" href="{% url 'manage_allotments' %}"><i class="bi bi-card-checklist me-1"></i> Allotments</a></li>
+                            <li class="nav-item"><a class="nav-link" href="{% url 'warden_fee_tracker' %}"><i class="bi bi-cash-stack me-1"></i> Fees</a></li>
+                            <li class="nav-item"><a class="nav-link" href="{% url 'manage_complaints' %}"><i class="bi bi-tools me-1"></i> Complaints</a></li>
+                            <li class="nav-item"><a class="nav-link" href="{% url 'analytics_dashboard' %}"><i class="bi bi-bar-chart-line me-1"></i> Analytics</a></li>
                         {% else %}
                             <li class="nav-item"><a class="nav-link" href="{% url 'student_dashboard' %}"><i class="bi bi-grid me-1"></i> Dashboard</a></li>
-                            <li class="nav-item"><a class="nav-link" href="{% url 'my_room' %}"><i class="bi bi-house-door me-1"></i> My Allotted Room</a></li>
+                            <li class="nav-item"><a class="nav-link" href="{% url 'my_room' %}"><i class="bi bi-house-door me-1"></i> My Room</a></li>
+                            <li class="nav-item"><a class="nav-link" href="{% url 'student_fees' %}"><i class="bi bi-receipt me-1"></i> Fees</a></li>
+                            <li class="nav-item"><a class="nav-link" href="{% url 'complaint_list' %}"><i class="bi bi-tools me-1"></i> Complaints</a></li>
                         {% endif %}
                     {% endif %}
                 </ul>

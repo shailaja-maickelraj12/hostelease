@@ -19,6 +19,12 @@ urlpatterns = [
     path('warden/allotments/update/<int:allotment_id>/<str:new_status>/', views.update_allotment_status, name='update_allotment_status'),
     path('warden/export/allotments/', views.export_allotments_csv, name='export_allotments_csv'),
 
+    # Member 2: Fee Payment Integration
+    path('fees/', views.student_fees, name='student_fees'),
+    path('fees/pay/<int:payment_id>/', views.pay_fee, name='pay_fee'),
+    path('fees/receipt/<int:payment_id>/', views.fee_receipt, name='fee_receipt'),
+    path('warden/fees/', views.warden_fee_tracker, name='warden_fee_tracker'),
+
     # Member 3: Complaints & Analytics
     path('complaints/', views.complaint_list, name='complaint_list'),
     path('complaints/new/', views.submit_complaint, name='submit_complaint'),

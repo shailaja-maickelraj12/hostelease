@@ -1,0 +1,90 @@
+{% extends 'hostel/base.html' %}
+
+{% block title %}My Fee Ledger - HostelEase{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+    <div>
+        <h2 class="fw-bold mb-1"><i class="bi bi-credit-card-2-front text-primary me-2"></i>Hostel Fee Ledger</h2>
+        <p class="text-muted mb-0">View your semester fees, due dates, outstanding balances, and official payment receipts.</p>
+    </div>
+</div>
+
+<!-- Dues Cards -->
+<div class="row g-4 mb-4">
+    <div class="col-md-6">
+        <div class="card p-4 stat-card border-danger bg-white">
+            <span class="text-muted small fw-semibold text-uppercase">Pending Total Dues</span>
+            <h3 class="fw-bold text-danger mt-1">Rs. {{ pending_total }}</h3>
+            <p class="text-muted small mb-0">Ensure payment before deadline to prevent late fines.</p>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card p-4 stat-card border-success bg-white">
+            <span class="text-muted small fw-semibold text-uppercase">Total Settled Fees</span>
+            <h3 class="fw-bold text-success mt-1">Rs. {{ paid_total }}</h3>
+            <p class="text-muted small mb-0">Official university receipts generated for all paid transactions.</p>
+        </div>
+    </div>
+</div>
+
+<!-- Payments Table -->
+<div class="card shadow-sm p-4 bg-white">
+    <h5 class="fw-bold mb-3">Fee Invoices &amp; Transactions</h5>
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th>Fee Type</th>
+                    <th>Amount</th>
+                    <th>Due Date</th>
+                    <th>Status</th>
+                    <th>Transaction ID</th>
+                    <th class="text-end">Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in payments %}
+                    <tr>
+                        <td>
+                            <strong>{{ p.fee_type }}</strong>
+                            <small class="text-muted d-block">{{ p.created_at|date:"M d, Y" }}</small>
+                        </td>
+                        <td><strong class="text-dark">Rs. {{ p.amount }}</strong></td>
+                        <td>{{ p.due_date|date:"M d, Y" }}</td>
+                        <td>
+                            {% if p.status == 'Paid' %}
+                                <span class="badge bg-success">Paid</span>
+                            {% else %}
+                                <span class="badge bg-danger">Pending</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if p.transaction_id %}
+                                <code>{{ p.transaction_id }}</code>
+                            {% else %}
+                                <span class="text-muted small">Not generated</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-end">
+                            {% if p.status == 'Pending' %}
+                                <a href="{% url 'pay_fee' p.id %}" class="btn btn-sm btn-primary">
+                                    <i class="bi bi-wallet2 me-1"></i> Pay Now
+                                </a>
+                            {% else %}
+                                <a href="{% url 'fee_receipt' p.id %}" class="btn btn-sm btn-outline-success">
+                                    <i class="bi bi-receipt me-1"></i> View Receipt
+                                </a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="6" class="text-center text-muted py-4">No fee invoices generated yet.</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

@@ -24,7 +24,14 @@ class RoomAllotmentAdmin(admin.ModelAdmin):
     list_filter = ('status', 'room__block')
     search_fields = ('student__username', 'room__room_number')
 
-from .models import Complaint
+from .models import Complaint, FeePayment
+
+@admin.register(FeePayment)
+class FeePaymentAdmin(admin.ModelAdmin):
+    list_display = ('student', 'fee_type', 'amount', 'due_date', 'status', 'transaction_id', 'payment_method', 'paid_at')
+    list_filter = ('status', 'fee_type', 'payment_method')
+    search_fields = ('student__username', 'transaction_id')
+
 @admin.register(Complaint)
 class ComplaintAdmin(admin.ModelAdmin):
     list_display = ('id', 'student', 'category', 'title', 'status', 'assigned_to', 'created_at', 'rating')

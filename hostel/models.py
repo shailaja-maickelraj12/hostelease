@@ -83,6 +83,32 @@ class RoomAllotment(models.Model):
         return f"{self.student.username} - {self.room} ({self.status})"
 
 
+# Module 2: Fee Payment Integration Models
+class FeePayment(models.Model):
+    FEE_TYPES = (
+        ('Hostel Rent', 'Hostel Rent Fee'),
+        ('Mess Fee', 'Mess / Dining Fee'),
+        ('Caution Deposit', 'Caution Deposit (Refundable)'),
+        ('Maintenance', 'Maintenance & Amenities'),
+    )
+    PAYMENT_STATUS = (
+        ('Pending', 'Pending'),
+        ('Paid', 'Paid'),
+        ('Failed', 'Failed'),
+    )
+    student = models.ForeignKey(User, on_delete=models.CASCADE, related_name='payments')
+    fee_type = models.CharField(max_length=30, choices=FEE_TYPES, default='Hostel Rent')
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    due_date = models.DateField()
+    status = models.CharField(max_length=15, choices=PAYMENT_STATUS, default='Pending')
+    transaction_id = models.CharField(max_length=50, blank=True, null=True, unique=True)
+    payment_method = models.CharField(max_length=30, blank=True, null=True)
+    paid_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.student.username} - {self.fee_type} - Rs.{self.amount} ({self.status})"
+
 
 class Complaint(models.Model):
     CATEGORY_CHOICES = (
