@@ -134,3 +134,6 @@ MEDIA_ROOT = BASE_DIR / 'media'
 LOGIN_URL = 'login'
 LOGIN_REDIRECT_URL = 'dashboard'
 LOGOUT_REDIRECT_URL = 'login'
+
+# Session configuration: Expire session when browser closes
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True
