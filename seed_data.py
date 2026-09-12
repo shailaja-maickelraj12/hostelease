@@ -76,6 +76,41 @@ def seed():
         room_number="101",
         defaults={'floor': 1, 'room_type': 'Double-AC', 'capacity': 2, 'occupied_beds': 0, 'rent_per_semester': 28000.00}
     )
+    r5, _ = Room.objects.get_or_create(
+        block=block_b,
+        room_number="102",
+        defaults={'floor': 1, 'room_type': 'Single-AC', 'capacity': 1, 'occupied_beds': 0, 'rent_per_semester': 36000.00}
+    )
+    r6, _ = Room.objects.get_or_create(
+        block=block_b,
+        room_number="103",
+        defaults={'floor': 1, 'room_type': 'Double-NonAC', 'capacity': 2, 'occupied_beds': 0, 'rent_per_semester': 24000.00}
+    )
+    r7, _ = Room.objects.get_or_create(
+        block=block_b,
+        room_number="201",
+        defaults={'floor': 2, 'room_type': 'Double-AC', 'capacity': 2, 'occupied_beds': 0, 'rent_per_semester': 28000.00}
+    )
+    r8, _ = Room.objects.get_or_create(
+        block=block_b,
+        room_number="202",
+        defaults={'floor': 2, 'room_type': 'Triple-NonAC', 'capacity': 3, 'occupied_beds': 0, 'rent_per_semester': 20000.00}
+    )
+    r9, _ = Room.objects.get_or_create(
+        block=block_b,
+        room_number="203",
+        defaults={'floor': 2, 'room_type': 'Single-AC', 'capacity': 1, 'occupied_beds': 0, 'rent_per_semester': 36000.00}
+    )
+    r10, _ = Room.objects.get_or_create(
+        block=block_b,
+        room_number="301",
+        defaults={'floor': 3, 'room_type': 'Double-NonAC', 'capacity': 2, 'occupied_beds': 0, 'rent_per_semester': 24000.00}
+    )
+    r11, _ = Room.objects.get_or_create(
+        block=block_b,
+        room_number="302",
+        defaults={'floor': 3, 'room_type': 'Triple-NonAC', 'capacity': 3, 'occupied_beds': 0, 'rent_per_semester': 20000.00}
+    )
     print("Created sample rooms across Block A and Block B.")
     print("Member 1 Data seeding completed successfully!")
 
